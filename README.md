@@ -158,7 +158,6 @@ powershell -ExecutionPolicy Bypass -File .\run-tests.ps1 -EvidenceMode always -H
 - The same workflow also supports manual runs through `workflow_dispatch`.
 - Manual run inputs:
   - `run_type`: `ui`, `api`, or `e2e`
-  - `workers`: number of pytest-xdist workers
   - `evidence_mode`: `on_failure` or `always`
 - When the workflow produces Allure results, it:
   - uploads the static Allure HTML report as an artifact
@@ -193,6 +192,7 @@ allure open artifacts\allure-report
 - The UI lifecycle test uses API setup to create deterministic alert preconditions, then validates the remediation flow through the web application.
 - The auto-remediation rescan verification scenario is intentionally marked as `xfail(strict=True)` because the application re-detects the alert on purpose.
 - The verified full-suite result is `2 passed, 1 xfailed`.
+- The assignment app exposes a single shared resettable environment, so the CI suite runs serially rather than in parallel.
 - The UI shows `Awaiting User Verification` for the backend status `REMEDIATED_WAITING_FOR_CUSTOMER`, so the UI test verifies the backend state and the user-facing label separately.
 - `pytest.ini` disables the cache provider to avoid a Windows workspace permission warning during verified runs.
 - GitHub Actions is configured to pull the published app images from GHCR, run the full suite, generate a static Allure HTML report, upload the report artifact, and publish the latest report to the `gh-pages` branch.
