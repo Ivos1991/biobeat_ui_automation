@@ -1,4 +1,16 @@
+"""Response models for admin APIs."""
+
+from dataclasses import dataclass
+
+
+@dataclass(slots=True)
 class ResetEnvironmentResponse:
-    def __init__(self, data: dict) -> None:
-        self.success = data["success"]
-        self.message = data["message"]
+    success: bool
+    message: str
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "ResetEnvironmentResponse":
+        return cls(
+            success=bool(data["success"]),
+            message=data["message"],
+        )

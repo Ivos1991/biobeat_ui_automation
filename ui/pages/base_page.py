@@ -1,4 +1,7 @@
+"""Base class for Playwright page objects."""
+
 import re
+from typing import TYPE_CHECKING
 
 import allure
 from playwright.sync_api import Page, expect
@@ -6,10 +9,15 @@ from playwright.sync_api import Page, expect
 from config.settings import Settings
 from ui.actions.playwright_actions import PlaywrightActions
 
+if TYPE_CHECKING:
+    from core.framework.runtime import FrameworkRuntime
+
 
 class BasePage(PlaywrightActions):
-    def __init__(self, page: Page, settings: Settings) -> None:
-        super().__init__(page)
+    """Base page object with navigation helpers."""
+
+    def __init__(self, page: Page, settings: Settings, *, runtime: FrameworkRuntime | None = None) -> None:
+        super().__init__(page, runtime=runtime)
         self.page = page
         self.settings = settings
 

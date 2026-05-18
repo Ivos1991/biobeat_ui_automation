@@ -1,50 +1,111 @@
+"""Response models for alert APIs."""
+
+from dataclasses import dataclass
+
+from core.framework.types import AlertId
+
+
+@dataclass(slots=True)
 class AssigneeResponse:
-    def __init__(self, data: dict) -> None:
-        self.id = data["id"]
-        self.name = data["name"]
-        self.email = data.get("email")
+    id: str
+    name: str
+    email: str | None
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AssigneeResponse":
+        return cls(
+            id=data["id"],
+            name=data["name"],
+            email=data.get("email"),
+        )
 
 
+@dataclass(slots=True)
 class AlertCommentResponse:
-    def __init__(self, data: dict) -> None:
-        self.id = data["id"]
-        self.author_name = data["author"]["name"]
-        self.message = data["message"]
-        self.created_at = data["createdAt"]
+    id: str
+    author_name: str
+    message: str
+    created_at: str
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AlertCommentResponse":
+        return cls(
+            id=data["id"],
+            author_name=data["author"]["name"],
+            message=data["message"],
+            created_at=data["createdAt"],
+        )
 
 
+@dataclass(slots=True)
 class PolicySnapshotResponse:
-    def __init__(self, data: dict | None) -> None:
-        self.violation_type = data.get("violationType") if data else None
-        self.auto_remediate = bool(data.get("autoRemediate", False)) if data else False
-        self.remediation_type = data.get("remediationType") if data else None
-        self.remediation_priority = data.get("remediationPriority") if data else None
-        self.remediation_due = data.get("remediationDue") if data else None
-        self.supported_assets = data.get("supportedAssets") if data else None
+    violation_type: str | None
+    auto_remediate: bool
+    remediation_type: str | None
+    remediation_priority: str | None
+    remediation_due: str | None
+    supported_assets: list[str] | None
+
+    @classmethod
+    def from_dict(cls, data: dict | None) -> "PolicySnapshotResponse":
+        payload = data or {}
+        return cls(
+            violation_type=payload.get("violationType"),
+            auto_remediate=bool(payload.get("autoRemediate", False)),
+            remediation_type=payload.get("remediationType"),
+            remediation_priority=payload.get("remediationPriority"),
+            remediation_due=payload.get("remediationDue"),
+            supported_assets=payload.get("supportedAssets"),
+        )
 
 
+@dataclass(slots=True)
 class AlertResponse:
-    def __init__(self, data: dict) -> None:
-        self.id = data["id"]
-        self.run_id = data["runId"]
-        self.policy_id = data["policyId"]
-        self.policy_name = data["policyName"]
-        self.severity = data["severity"]
-        self.created_severity = data.get("createdSeverity", data["severity"])
-        self.status = data["status"]
-        self.description = data["description"]
-        self.violation_type = data["violationType"]
-        self.asset_display_name = data.get("assetDisplayName") or data["asset"]["metadata"]["name"]
-        self.asset_location = data.get("assetLocation") or data["asset"]["location"]
-        self.was_remediated = bool(data.get("wasRemediated", False))
-        self.remediation_origin = data.get("remediationOrigin", "NONE")
-        self.assigned_to = AssigneeResponse(data["assignedTo"]) if data.get("assignedTo") else None
-        self.comments = [AlertCommentResponse(item) for item in data.get("comments", [])]
-        self.created_at = data["createdAt"]
-        self.updated_at = data.get("updatedAt")
-        self.valid_transitions = data.get("validTransitions", [])
-        self.can_remediate = bool(data.get("canRemediate", False))
-        self.policy_snapshot = PolicySnapshotResponse(data.get("policySnapshot"))
+    id: AlertId
+    run_id: str
+    policy_id: str
+    policy_name: str
+    severity: str
+    created_severity: str
+    status: str
+    description: str
+    violation_type: str
+    asset_display_name: str
+    asset_location: str
+    was_remediated: bool
+    remediation_origin: str
+    assigned_to: AssigneeResponse | None
+    comments: tuple[AlertCommentResponse, ...]
+    created_at: str
+    updated_at: str | None
+    valid_transitions: tuple[str, ...]
+    can_remediate: bool
+    policy_snapshot: PolicySnapshotResponse
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AlertResponse":
+        return cls(
+            id=AlertId(data["id"]),
+            run_id=data["runId"],
+            policy_id=data["policyId"],
+            policy_name=data["policyName"],
+            severity=data["severity"],
+            created_severity=data.get("createdSeverity", data["severity"]),
+            status=data["status"],
+            description=data["description"],
+            violation_type=data["violationType"],
+            asset_display_name=data.get("assetDisplayName") or data["asset"]["metadata"]["name"],
+            asset_location=data.get("assetLocation") or data["asset"]["location"],
+            was_remediated=bool(data.get("wasRemediated", False)),
+            remediation_origin=data.get("remediationOrigin", "NONE"),
+            assigned_to=AssigneeResponse.from_dict(data["assignedTo"]) if data.get("assignedTo") else None,
+            comments=tuple(AlertCommentResponse.from_dict(item) for item in data.get("comments", [])),
+            created_at=data["createdAt"],
+            updated_at=data.get("updatedAt"),
+            valid_transitions=tuple(data.get("validTransitions", [])),
+            can_remediate=bool(data.get("canRemediate", False)),
+            policy_snapshot=PolicySnapshotResponse.from_dict(data.get("policySnapshot")),
+        )
 
     def matches_signature(self, other: "AlertResponse") -> bool:
         return (

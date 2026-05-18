@@ -1,6 +1,9 @@
+"""UI-specific fixtures and Playwright artifact handling."""
+
 import pytest
 from assertpy import assert_that
 from playwright.sync_api import Page
+
 from core.testing_utils.playwright_artifacts import attach_artifacts_from_output_path, attach_page_screenshot
 from ui.pages.login_page import LoginPage
 
@@ -15,10 +18,10 @@ def managed_ui_environment(admin_service, logger):
 
 
 @pytest.fixture
-def browser_context_args(browser_context_args):
+def browser_context_args(browser_context_args, settings):
     return {
         **browser_context_args,
-        "ignore_https_errors": True,
+        "ignore_https_errors": settings.browser.ignore_https_errors,
     }
 
 
@@ -32,8 +35,8 @@ def browser_type_launch_args(browser_type_launch_args, settings):
 
 
 @pytest.fixture
-def authenticated_page(page: Page, settings) -> Page:
-    login_page = LoginPage(page, settings)
+def authenticated_page(page: Page, page_factory, settings) -> Page:
+    login_page = page_factory.create(LoginPage, page)
     login_page.open()
     login_page.login(settings.username, settings.password)
     assert_that(page.url).described_as("authenticated page URL").contains("/policies")
@@ -46,7 +49,7 @@ def attach_ui_artifacts_on_failure(request, settings):
 
     report = getattr(request.node, "rep_call", None)
     collect_all_evidence = bool(request.node.get_closest_marker("collect_all_evidence"))
-    always_collect = settings.browser_evidence_mode == "always" or collect_all_evidence
+    always_collect = settings.browser_evidence_mode == "full_evidence" or collect_all_evidence
     if not report or (not report.failed and not always_collect):
         return
     if request.config.getoption("--screenshot") in ["on", "only-on-failure"]:

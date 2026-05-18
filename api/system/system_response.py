@@ -1,3 +1,13 @@
+"""Response models for system APIs."""
+
+from dataclasses import dataclass
+from typing import Any
+
+
+@dataclass(slots=True)
 class HealthResponse:
-    def __init__(self, data: dict) -> None:
-        self.data = data
+    data: dict[str, Any]
+
+    @classmethod
+    def from_dict(cls, data: dict[str, Any]) -> "HealthResponse":
+        return cls(data=data)

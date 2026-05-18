@@ -6,8 +6,8 @@ from ui.pages.base_page import BasePage
 
 
 class AlertDetailsDrawer(BasePage):
-    def __init__(self, page: Page, settings: Settings) -> None:
-        super().__init__(page, settings)
+    def __init__(self, page: Page, settings: Settings, *, runtime=None) -> None:
+        super().__init__(page, settings, runtime=runtime)
         self.root = page.get_by_test_id("alert-details-drawer")
         self.remediation_section_toggle = self.root.get_by_role("button", name="Remediation")
         self.status_button = self.root.get_by_role("button", name="Change alert status")
@@ -51,7 +51,9 @@ class AlertDetailsDrawer(BasePage):
 
     def wait_for_status(self, status_label: str, timeout_ms: int = 180000) -> None:
         with allure.step(f"Wait for status {status_label}"):
-            self.expect_text(self.status_button, status_label, f"alert status becomes {status_label}", timeout=timeout_ms)
+            self.expect_text(
+                self.status_button, status_label, f"alert status becomes {status_label}", timeout=timeout_ms
+            )
 
     def add_comment(self, message: str) -> None:
         with allure.step("Add alert comment"):

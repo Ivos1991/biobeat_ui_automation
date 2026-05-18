@@ -1,5 +1,8 @@
+"""Polling and retry utilities shared across the framework."""
+
 import time
-from typing import Callable, TypeVar
+from collections.abc import Callable
+from typing import TypeVar
 
 from core.exceptions import PollTimeoutError
 
@@ -7,17 +10,13 @@ from core.exceptions import PollTimeoutError
 T = TypeVar("T")
 
 
-def wait_until(
-    predicate: Callable[[], T],
-    *,
-    timeout_seconds: float,
-    interval_seconds: float,
-    description: str,
-) -> T:
-    deadline = time.time() + timeout_seconds
+def wait_until(predicate: Callable[[], T | None], *, timeout_seconds: float, interval_seconds: float, description: str) -> T:
+    """Poll ``predicate`` until it returns a truthy value or timeout expires."""
+
+    deadline = time.monotonic() + timeout_seconds
     last_value: T | None = None
 
-    while time.time() < deadline:
+    while time.monotonic() < deadline:
         last_value = predicate()
         if last_value:
             return last_value

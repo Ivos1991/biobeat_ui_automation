@@ -1,11 +1,31 @@
+"""Response models for authentication APIs."""
+
+from dataclasses import dataclass
+
+
+@dataclass(slots=True)
 class AuthUserResponse:
-    def __init__(self, data: dict) -> None:
-        self.id = data["id"]
-        self.display_name = data["displayName"]
-        self.role = data["role"]
+    id: str
+    display_name: str
+    role: str
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AuthUserResponse":
+        return cls(
+            id=data["id"],
+            display_name=data["displayName"],
+            role=data["role"],
+        )
 
 
+@dataclass(slots=True)
 class AuthResponse:
-    def __init__(self, data: dict) -> None:
-        self.token = data["token"]
-        self.user = AuthUserResponse(data["user"])
+    token: str
+    user: AuthUserResponse
+
+    @classmethod
+    def from_dict(cls, data: dict) -> "AuthResponse":
+        return cls(
+            token=data["token"],
+            user=AuthUserResponse.from_dict(data["user"]),
+        )

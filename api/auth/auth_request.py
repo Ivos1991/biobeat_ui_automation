@@ -1,6 +1,13 @@
+"""Request builders for authentication APIs."""
+
+from dataclasses import dataclass, field
+
+from core.framework.types import LoginPayload
+
+
+@dataclass(slots=True)
 class AuthRequest:
-    def __init__(self) -> None:
-        self.request_body: dict = {}
+    request_body: LoginPayload = field(default_factory=lambda: {"username": "", "password": ""})
 
     def login_request(self, username: str, password: str) -> "AuthRequest":
         self.request_body = {

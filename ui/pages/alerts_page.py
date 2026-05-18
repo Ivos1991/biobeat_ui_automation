@@ -7,11 +7,11 @@ from ui.pages.base_page import BasePage
 
 
 class AlertsPage(BasePage):
-    def __init__(self, page: Page, settings: Settings) -> None:
-        super().__init__(page, settings)
+    def __init__(self, page: Page, settings: Settings, *, runtime=None) -> None:
+        super().__init__(page, settings, runtime=runtime)
         self.search_input = page.get_by_label("Search alerts by policy name, asset location, or description")
         self.table = page.locator("table[aria-label='Alerts list']")
-        self.drawer = AlertDetailsDrawer(page, settings)
+        self.drawer = AlertDetailsDrawer(page, settings, runtime=runtime)
 
     def open(self) -> None:
         self.goto("/alerts")

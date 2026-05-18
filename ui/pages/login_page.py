@@ -6,8 +6,8 @@ from ui.pages.base_page import BasePage
 
 
 class LoginPage(BasePage):
-    def __init__(self, page: Page, settings: Settings) -> None:
-        super().__init__(page, settings)
+    def __init__(self, page: Page, settings: Settings, *, runtime=None) -> None:
+        super().__init__(page, settings, runtime=runtime)
         self.username_input = page.locator("#username")
         self.password_input = page.locator("#password")
         self.submit_button = page.get_by_role("button", name="Sign in")

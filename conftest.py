@@ -1,8 +1,9 @@
-import os
+"""Global pytest configuration and framework bootstrap."""
+
 from pathlib import Path
+from typing import Any
 import pytest
 from assertpy import assert_that
-
 from api.admin.admin_api import AdminApi
 from api.admin.admin_service import AdminService
 from api.alerts.alerts_api import AlertsApi
@@ -12,73 +13,121 @@ from api.auth.auth_service import AuthService
 from api.scans.scans_api import ScansApi
 from api.scans.scans_service import ScansService
 from config.settings import Settings
-from core.core_utils.logger import configure_logging, get_logger
+from core.framework.hooks import FailureContext, TestContext
+from core.framework.runtime import FrameworkRuntime, build_runtime
+from core.framework.types import TestId
+from core.orchestrators.alert_workflows import AlertWorkflowOrchestrator
+from ui.page_factory import PageObjectFactory
 
 
-VALID_BROWSER_EVIDENCE_MODES = {"off", "on_failure", "always"}
-
-
-def _cli_option_present(config: pytest.Config, option_name: str) -> bool:
-    return option_name in config.invocation_params.args
-
-
-def _browser_evidence_mode() -> str:
-    mode = os.getenv("BROWSER_EVIDENCE_MODE", "on_failure").strip().lower()
-    if mode not in VALID_BROWSER_EVIDENCE_MODES:
-        raise pytest.UsageError(
-            "BROWSER_EVIDENCE_MODE must be one of: off, on_failure, always"
-        )
-    return mode
+def _runtime(config: pytest.Config) -> FrameworkRuntime:
+    runtime = getattr(config, "_framework_runtime", None)
+    if runtime is None:
+        runtime = build_runtime()
+        setattr(config, "_framework_runtime", runtime)
+    return runtime
 
 
 def _apply_playwright_artifact_defaults(config: pytest.Config, items: list[pytest.Item]) -> None:
-    mode = _browser_evidence_mode()
+    runtime = _runtime(config)
+    mode = runtime.settings.browser_evidence_mode
     has_collect_all_marker = any(item.get_closest_marker("collect_all_evidence") for item in items)
-    force_always = mode == "always" or has_collect_all_marker
+    force_always = mode == "full_evidence" or has_collect_all_marker
 
-    if not _cli_option_present(config, "--output") and getattr(config.option, "output", None) == "test-results":
-        config.option.output = str(Path(os.getenv("ARTIFACT_DIR", "artifacts")) / "playwright")
+    if getattr(config.option, "output", None) == "test-results":
+        config.option.output = str(Path(runtime.settings.artifact_dir) / "playwright")
 
     if mode == "off":
         return
 
-    if not _cli_option_present(config, "--screenshot") and getattr(config.option, "screenshot", None) == "off":
+    if getattr(config.option, "screenshot", None) == "off":
         config.option.screenshot = "on" if force_always else "only-on-failure"
 
-    if not _cli_option_present(config, "--video") and getattr(config.option, "video", None) == "off":
+    if getattr(config.option, "video", None) == "off":
         config.option.video = "on" if force_always else "retain-on-failure"
 
-    if not _cli_option_present(config, "--tracing") and getattr(config.option, "tracing", None) == "off":
+    if getattr(config.option, "tracing", None) == "off":
         config.option.tracing = "on" if force_always else "retain-on-failure"
+
+
+def pytest_configure(config: pytest.Config) -> None:
+    _runtime(config)
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
     _apply_playwright_artifact_defaults(config, items)
 
 
+def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    runtime = _runtime(session.config)
+    runtime.session_context.metadata["exitstatus"] = exitstatus
+    runtime.hooks.emit("after_session", runtime.session_context)
+
+
+def pytest_runtest_setup(item: pytest.Item) -> None:
+    runtime = _runtime(item.config)
+    context = TestContext(test_id=TestId(item.nodeid), nodeid=item.nodeid, name=item.name, phase="setup")
+    setattr(item, "_framework_test_context", context)
+    runtime.session_context.metadata["current_test"] = context
+    runtime.hooks.emit("before_test", context)
+
+
+@pytest.hookimpl(hookwrapper=True, tryfirst=True)
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[Any]):
+    outcome = yield
+    report = outcome.get_result()
+    setattr(item, f"rep_{report.when}", report)
+
+    runtime = _runtime(item.config)
+    context = getattr(item, "_framework_test_context", None)
+    if not isinstance(context, TestContext):
+        return
+
+    context.phase = report.when
+    if report.when == "call":
+        context.outcome = report.outcome
+        if report.failed:
+            runtime.hooks.emit(
+                "on_failure",
+                FailureContext(test=context, error=call.excinfo.value if call.excinfo else None, report=report),
+            )
+        runtime.hooks.emit("after_test", context)
+        runtime.session_context.metadata.pop("current_test", None)
+
+
 @pytest.fixture(scope="session")
-def settings() -> Settings:
-    return Settings.from_env()
-
-
-@pytest.fixture(scope="session", autouse=True)
-def framework_logging(settings: Settings) -> None:
-    configure_logging(settings.log_dir, settings.log_level)
+def framework(pytestconfig: pytest.Config) -> FrameworkRuntime:
+    return _runtime(pytestconfig)
 
 
 @pytest.fixture(scope="session")
-def logger():
-    return get_logger("tests")
+def service_container(framework: FrameworkRuntime):
+    return framework.container
 
 
 @pytest.fixture(scope="session")
-def auth_api(settings: Settings) -> AuthApi:
-    return AuthApi(settings)
+def settings(framework: FrameworkRuntime) -> Settings:
+    return framework.settings
 
 
 @pytest.fixture(scope="session")
-def auth_service(auth_api: AuthApi) -> AuthService:
-    return AuthService(auth_api)
+def logger(framework: FrameworkRuntime):
+    return framework.logger
+
+
+@pytest.fixture(scope="session")
+def page_factory(framework: FrameworkRuntime, settings: Settings) -> PageObjectFactory:
+    return PageObjectFactory(settings=settings, runtime=framework)
+
+
+@pytest.fixture(scope="session")
+def auth_api(service_container) -> AuthApi:
+    return service_container.typed_resolve(AuthApi, AuthApi)
+
+
+@pytest.fixture(scope="session")
+def auth_service(service_container) -> AuthService:
+    return service_container.typed_resolve(AuthService, AuthService)
 
 
 @pytest.fixture(scope="session")
@@ -89,43 +138,50 @@ def authenticated_api(auth_service: AuthService, settings: Settings):
 
 
 @pytest.fixture(scope="session")
-def admin_api(settings: Settings, authenticated_api) -> AdminApi:
-    api = AdminApi(settings)
+def admin_api(service_container, authenticated_api) -> AdminApi:
+    api = service_container.typed_resolve(AdminApi, AdminApi)
     api.set_token(authenticated_api.token)
     return api
 
 
 @pytest.fixture(scope="session")
-def admin_service(admin_api: AdminApi) -> AdminService:
-    return AdminService(admin_api)
+def admin_service(service_container, admin_api: AdminApi) -> AdminService:
+    service = service_container.typed_resolve(AdminService, AdminService)
+    service.admin_api = admin_api
+    return service
 
 
 @pytest.fixture(scope="session")
-def alerts_api(settings: Settings, authenticated_api) -> AlertsApi:
-    api = AlertsApi(settings)
+def alerts_api(service_container, authenticated_api) -> AlertsApi:
+    api = service_container.typed_resolve(AlertsApi, AlertsApi)
     api.set_token(authenticated_api.token)
     return api
 
 
 @pytest.fixture(scope="session")
-def alerts_service(alerts_api: AlertsApi, settings: Settings) -> AlertsService:
-    return AlertsService(alerts_api, settings)
+def alerts_service(service_container, alerts_api: AlertsApi) -> AlertsService:
+    service = service_container.typed_resolve(AlertsService, AlertsService)
+    service.alerts_api = alerts_api
+    return service
 
 
 @pytest.fixture(scope="session")
-def scans_api(settings: Settings, authenticated_api) -> ScansApi:
-    api = ScansApi(settings)
+def scans_api(service_container, authenticated_api) -> ScansApi:
+    api = service_container.typed_resolve(ScansApi, ScansApi)
     api.set_token(authenticated_api.token)
     return api
 
 
 @pytest.fixture(scope="session")
-def scans_service(scans_api: ScansApi, settings: Settings) -> ScansService:
-    return ScansService(scans_api, settings)
+def scans_service(service_container, scans_api: ScansApi) -> ScansService:
+    service = service_container.typed_resolve(ScansService, ScansService)
+    service.scans_api = scans_api
+    return service
 
 
-@pytest.hookimpl(hookwrapper=True, tryfirst=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    report = outcome.get_result()
-    setattr(item, f"rep_{report.when}", report)
+@pytest.fixture(scope="session")
+def alert_workflows(service_container, scans_service: ScansService, alerts_service: AlertsService) -> AlertWorkflowOrchestrator:
+    orchestrator = service_container.typed_resolve(AlertWorkflowOrchestrator, AlertWorkflowOrchestrator)
+    orchestrator.scans_service = scans_service
+    orchestrator.alerts_service = alerts_service
+    return orchestrator
