@@ -1,0 +1,1 @@
+"""Patient Admission UI tests."""

@@ -8,12 +8,16 @@ from config.settings import Settings
 from core.framework.runtime import FrameworkRuntime
 from ui.pages.base_page import BasePage
 
-
 PageObjectT = TypeVar("PageObjectT", bound=BasePage)
 
 
 class PageObjectFactory:
-    """Creates page objects with shared configuration and runtime dependencies."""
+    """Creates page objects with the shared dependencies already wired in.
+
+    This keeps page-object construction consistent across flows and fixtures by
+    injecting the current Playwright page together with the framework settings
+    and runtime.
+    """
 
     def __init__(self, settings: Settings, runtime: FrameworkRuntime) -> None:
         self.settings = settings

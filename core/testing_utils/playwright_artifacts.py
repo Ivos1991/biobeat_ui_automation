@@ -39,3 +39,8 @@ def attach_page_screenshot(page: Page, screenshot_path: Path) -> None:
     page.screenshot(path=str(screenshot_path), full_page=True)
     attach_file("failure-screenshot", screenshot_path, allure.attachment_type.PNG)
     attach_text("page-url", page.url)
+
+
+def attach_log_file(log_path: Path) -> None:
+    if log_path.exists():
+        attach_file(log_path.name, log_path, allure.attachment_type.TEXT)

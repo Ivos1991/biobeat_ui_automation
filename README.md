@@ -1,122 +1,163 @@
-# DSMP Full-Stack Automation Framework
+# BioBeat UI Automation Home Assignment
 
-Production-grade Python automation framework for UI and API validation. The project keeps the original Cyera assignment scenarios intact while refactoring the internals around dependency injection, hooks, plugins, and typed configuration.
+Live Playwright UI automation suite for the BioBeat Patient Admission workflow.
 
-## What Changed
+## Target Application
 
-- Added a lightweight DI container with singleton and factory lifecycles.
-- Added a typed lifecycle hook bus for session, test, step, failure, and API events.
-- Added import-discovered plugins with config-based enable/disable.
-- Reworked settings into nested typed dataclasses loaded from `.env` and environment variables.
-- Introduced workflow orchestrators and page factories to reduce duplication across tests.
-- Added framework-level unit tests plus CI steps for linting, type checking, and architecture validation.
+- URL: `https://bpm-demo.eu.bio-beat.cloud/login`
+- Business hierarchy: `Clients -> Departments -> Patients -> Sessions`
+
+Verified live behavior used by the suite:
+
+- Session Management is the reliable source for admission verification.
+- Patient Lookup may lag behind newly created admissions.
+- Session removal requires the same Patient ID, not Device ID.
+- Verified device states:
+  - `676767`: working creation path
+  - `126875`: in use
+  - `676733`: not activated or does not exist
 
 ## Repository Layout
 
 ```text
 .
-|-- api
-|-- config
-|-- core
-|   |-- framework
-|   |-- orchestrators
-|   |-- plugins
-|   |-- core_utils
-|   `-- testing_utils
-|-- docs
-|-- tests
-|   |-- api
-|   |-- framework
-|   `-- ui
-|-- ui
-|   |-- actions
-|   |-- pages
-|   `-- page_factory.py
-`-- .github/workflows
+|-- .github/workflows/ui-tests.yml
+|-- config/
+|-- core/
+|-- docs/
+|   `-- manual_test_cases.md
+|-- flows/
+|   `-- admission_flow.py
+|-- skills/
+|-- test_data/
+|   `-- patient_admission_cases.py
+|-- tests/
+|   `-- ui/
+|       |-- patient_admission/
+|       |   |-- conftest.py
+|       |   |-- support.py
+|       |   |-- test_admission_cleanup.py
+|       |   |-- test_admission_happy_path.py
+|       |   |-- test_admission_negative_validation.py
+|       |   `-- test_admission_popup_behavior.py
+|       |-- conftest.py
+|       |-- test_login.py
+|       `-- test_navigation.py
+|-- ui/
+|   `-- pages/
+|-- utils/
+|   `-- assertions.py
+|-- .env.example
+|-- conftest.py
+|-- pyproject.toml
+|-- pytest.ini
+`-- run-tests.ps1
 ```
+
+## Architecture Summary
+
+- `config/`: typed runtime settings from environment variables.
+- `ui/pages/`: locator-first page objects containing locators, UI actions, and data reads only.
+- `flows/`: thin orchestration across page objects.
+- `tests/ui/`: scenario tests organized by login, navigation, happy path, validation, popup behavior, and cleanup.
+- `utils/assertions.py`: small assertion facade used consistently across tests and fixtures.
 
 ## Setup
 
-```bash
+```powershell
 python -m venv .venv
-.venv\Scripts\activate
+.venv\Scripts\Activate.ps1
 python -m pip install --upgrade pip
 python -m pip install -e .[dev]
 python -m playwright install chromium
+Copy-Item .env.example .env
 ```
-
-Copy `.env.example` to `.env` when running locally.
 
 ## Configuration
 
-Core settings are loaded by `Settings.from_env()` and grouped by responsibility:
+The suite reads the following environment variables:
 
-- `urls`
-- `credentials`
-- `browser`
-- `timeouts`
-- `retries`
-- `reporting`
-- `plugins`
-- `runtime`
+- `WEB_BASE_URL`
+- `BIOBEAT_USERNAME`
+- `BIOBEAT_PASSWORD`
+- `BROWSER`
+- `HEADLESS`
+- `SLOW_MO_MS`
+- `DEFAULT_TIMEOUT_MS`
+- `EXPECT_TIMEOUT_MS`
+- `NAVIGATION_TIMEOUT_MS`
+- `BROWSER_EVIDENCE_MODE`
+- `IGNORE_HTTPS_ERRORS`
+- `ARTIFACT_DIR`
 
-Evidence modes:
+Compatibility aliases are also supported:
 
-- `off`
-- `failure_only`
-- `full_evidence`
-
-Compatibility aliases `on_failure` and `always` are still accepted.
+- `APP_USERNAME`
+- `APP_PASSWORD`
 
 ## Running Tests
 
-Framework unit tests:
+Collect tests only:
 
-```bash
-.venv\Scripts\python -m pytest tests\framework -q
+```powershell
+.venv\Scripts\python -m pytest tests\ui --collect-only -q
 ```
 
-API tests:
+Run the complete UI suite:
 
-```bash
-.venv\Scripts\python -m pytest tests\api -m api -q -rs --alluredir artifacts\allure-results
+```powershell
+.venv\Scripts\python -m pytest tests\ui -m ui -q --alluredir artifacts\allure-results
 ```
 
-UI tests:
+Run smoke coverage:
 
-```bash
-.venv\Scripts\python -m pytest tests\ui -m ui -q -rs --alluredir artifacts\allure-results
+```powershell
+.venv\Scripts\python -m pytest tests\ui -m "ui and smoke" -q --alluredir artifacts\allure-results
 ```
 
-Full suite:
+Run through the helper script:
 
-```bash
-.venv\Scripts\python -m pytest -q -rs --alluredir artifacts\allure-results
+```powershell
+.\run-tests.ps1
+.\run-tests.ps1 -Headed -SlowMoMs 100
 ```
 
-## CI/CD
+## Allure
 
-`ci.yml` now runs:
+Generate a local report after a run:
 
-- Ruff linting
-- MyPy type checking
-- framework unit tests
-- selected E2E/API/UI suite
-- Allure artifact generation and upload
-- optional GitHub Pages publication for the latest report
+```powershell
+allure generate artifacts\allure-results --clean -o artifacts\allure-report
+allure open artifacts\allure-report
+```
 
-## Extension Points
+## CI
 
-- Plugins: `core/plugins/builtin`
-- Hook contracts: `core/framework/hooks.py`
-- DI registrations: `core/framework/runtime.py`
-- Orchestrators: `core/orchestrators`
-- Page factories: `ui/page_factory.py`
+Workflow: [`.github/workflows/ui-tests.yml`](.github/workflows/ui-tests.yml)
 
-## Documentation
+Expected GitHub repository secrets:
 
-- [Architecture](docs/architecture.md)
-- [Plugin System](docs/plugin-system.md)
-- [Hooks](docs/hooks.md)
-- [Dependency Injection](docs/dependency-injection.md)
-- [Extensibility](docs/extensibility.md)
+- `BIOBEAT_USERNAME`
+- `BIOBEAT_PASSWORD`
+
+Optional repository variable:
+
+- `WEB_BASE_URL`
+
+The workflow:
+
+- installs Python dependencies
+- installs Playwright Chromium
+- runs `python -m pytest tests/ui -m ui -q --alluredir artifacts/allure-results`
+- uploads Allure results
+- uploads Playwright screenshots, videos, traces, and logs
+
+## Manual Test Cases
+
+See [docs/manual_test_cases.md](docs/manual_test_cases.md).
+
+## Submission Notes
+
+- The suite was verified live against the BioBeat application.
+- Cleanup is built into the creation flow and verified through a dedicated cleanup test.
+- No xfail placeholders, exploratory exceptions, or generated TODO tests remain in the active UI suite.

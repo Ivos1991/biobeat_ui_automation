@@ -1,22 +1,22 @@
 """Global pytest configuration and framework bootstrap."""
 
+from __future__ import annotations
+
 from pathlib import Path
 from typing import Any
+
 import pytest
-from assertpy import assert_that
-from api.admin.admin_api import AdminApi
-from api.admin.admin_service import AdminService
-from api.alerts.alerts_api import AlertsApi
-from api.alerts.alerts_service import AlertsService
-from api.auth.auth_api import AuthApi
-from api.auth.auth_service import AuthService
-from api.scans.scans_api import ScansApi
-from api.scans.scans_service import ScansService
+from playwright.sync_api import Page
+
 from config.settings import Settings
 from core.framework.hooks import FailureContext, TestContext
 from core.framework.runtime import FrameworkRuntime, build_runtime
 from core.framework.types import TestId
-from core.orchestrators.alert_workflows import AlertWorkflowOrchestrator
+from core.testing_utils.playwright_artifacts import (
+    attach_artifacts_from_output_path,
+    attach_log_file,
+    attach_page_screenshot,
+)
 from ui.page_factory import PageObjectFactory
 
 
@@ -24,20 +24,24 @@ def _runtime(config: pytest.Config) -> FrameworkRuntime:
     runtime = getattr(config, "_framework_runtime", None)
     if runtime is None:
         runtime = build_runtime()
-        setattr(config, "_framework_runtime", runtime)
+        config._framework_runtime = runtime
     return runtime
 
 
-def _apply_playwright_artifact_defaults(config: pytest.Config, items: list[pytest.Item]) -> None:
+def _apply_playwright_defaults(config: pytest.Config, items: list[pytest.Item]) -> None:
     runtime = _runtime(config)
-    mode = runtime.settings.browser_evidence_mode
-    has_collect_all_marker = any(item.get_closest_marker("collect_all_evidence") for item in items)
-    force_always = mode == "full_evidence" or has_collect_all_marker
+    settings = runtime.settings
+    force_always = settings.browser_evidence_mode == "full_evidence" or any(
+        item.get_closest_marker("collect_all_evidence") for item in items
+    )
+
+    if getattr(config.option, "browser", None) in (None, []):
+        config.option.browser = [settings.browser_name]
 
     if getattr(config.option, "output", None) == "test-results":
-        config.option.output = str(Path(runtime.settings.artifact_dir) / "playwright")
+        config.option.output = str(Path(settings.artifact_dir) / "playwright")
 
-    if mode == "off":
+    if settings.browser_evidence_mode == "off":
         return
 
     if getattr(config.option, "screenshot", None) == "off":
@@ -55,7 +59,7 @@ def pytest_configure(config: pytest.Config) -> None:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
-    _apply_playwright_artifact_defaults(config, items)
+    _apply_playwright_defaults(config, items)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
@@ -67,7 +71,7 @@ def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
 def pytest_runtest_setup(item: pytest.Item) -> None:
     runtime = _runtime(item.config)
     context = TestContext(test_id=TestId(item.nodeid), nodeid=item.nodeid, name=item.name, phase="setup")
-    setattr(item, "_framework_test_context", context)
+    item._framework_test_context = context
     runtime.session_context.metadata["current_test"] = context
     runtime.hooks.emit("before_test", context)
 
@@ -101,18 +105,8 @@ def framework(pytestconfig: pytest.Config) -> FrameworkRuntime:
 
 
 @pytest.fixture(scope="session")
-def service_container(framework: FrameworkRuntime):
-    return framework.container
-
-
-@pytest.fixture(scope="session")
 def settings(framework: FrameworkRuntime) -> Settings:
     return framework.settings
-
-
-@pytest.fixture(scope="session")
-def logger(framework: FrameworkRuntime):
-    return framework.logger
 
 
 @pytest.fixture(scope="session")
@@ -120,68 +114,50 @@ def page_factory(framework: FrameworkRuntime, settings: Settings) -> PageObjectF
     return PageObjectFactory(settings=settings, runtime=framework)
 
 
-@pytest.fixture(scope="session")
-def auth_api(service_container) -> AuthApi:
-    return service_container.typed_resolve(AuthApi, AuthApi)
+@pytest.fixture
+def browser_context_args(browser_context_args, settings: Settings):
+    return {
+        **browser_context_args,
+        "ignore_https_errors": settings.browser.ignore_https_errors,
+    }
 
 
 @pytest.fixture(scope="session")
-def auth_service(service_container) -> AuthService:
-    return service_container.typed_resolve(AuthService, AuthService)
+def browser_type_launch_args(browser_type_launch_args, settings: Settings):
+    return {
+        **browser_type_launch_args,
+        "headless": settings.headless,
+        "slow_mo": settings.slow_mo_ms,
+    }
 
 
-@pytest.fixture(scope="session")
-def authenticated_api(auth_service: AuthService, settings: Settings):
-    response = auth_service.login(settings.username, settings.password)
-    assert_that(response.user.role).described_as("authenticated user role").is_equal_to("ADMIN")
-    return response
+@pytest.fixture(autouse=True)
+def register_playwright_output_path(request, output_path):
+    request.node.playwright_output_path = output_path
+    return output_path
 
 
-@pytest.fixture(scope="session")
-def admin_api(service_container, authenticated_api) -> AdminApi:
-    api = service_container.typed_resolve(AdminApi, AdminApi)
-    api.set_token(authenticated_api.token)
-    return api
+@pytest.fixture(autouse=True)
+def attach_ui_artifacts(request, settings: Settings):
+    yield
 
+    report = getattr(request.node, "rep_call", None)
+    collect_all_evidence = bool(request.node.get_closest_marker("collect_all_evidence"))
+    always_collect = settings.browser_evidence_mode == "full_evidence" or collect_all_evidence
+    should_collect = bool(report and report.failed) or always_collect
+    if not should_collect:
+        return
 
-@pytest.fixture(scope="session")
-def admin_service(service_container, admin_api: AdminApi) -> AdminService:
-    service = service_container.typed_resolve(AdminService, AdminService)
-    service.admin_api = admin_api
-    return service
+    page = request.node.funcargs.get("page")
+    if isinstance(page, Page):
+        screenshot_path = settings.artifact_dir / "screenshots" / f"{request.node.name}.png"
+        try:
+            attach_page_screenshot(page, screenshot_path)
+        except Exception:
+            pass
 
+    output_path = getattr(request.node, "playwright_output_path", None)
+    if output_path:
+        attach_artifacts_from_output_path(output_path)
 
-@pytest.fixture(scope="session")
-def alerts_api(service_container, authenticated_api) -> AlertsApi:
-    api = service_container.typed_resolve(AlertsApi, AlertsApi)
-    api.set_token(authenticated_api.token)
-    return api
-
-
-@pytest.fixture(scope="session")
-def alerts_service(service_container, alerts_api: AlertsApi) -> AlertsService:
-    service = service_container.typed_resolve(AlertsService, AlertsService)
-    service.alerts_api = alerts_api
-    return service
-
-
-@pytest.fixture(scope="session")
-def scans_api(service_container, authenticated_api) -> ScansApi:
-    api = service_container.typed_resolve(ScansApi, ScansApi)
-    api.set_token(authenticated_api.token)
-    return api
-
-
-@pytest.fixture(scope="session")
-def scans_service(service_container, scans_api: ScansApi) -> ScansService:
-    service = service_container.typed_resolve(ScansService, ScansService)
-    service.scans_api = scans_api
-    return service
-
-
-@pytest.fixture(scope="session")
-def alert_workflows(service_container, scans_service: ScansService, alerts_service: AlertsService) -> AlertWorkflowOrchestrator:
-    orchestrator = service_container.typed_resolve(AlertWorkflowOrchestrator, AlertWorkflowOrchestrator)
-    orchestrator.scans_service = scans_service
-    orchestrator.alerts_service = alerts_service
-    return orchestrator
+    attach_log_file(settings.log_dir / "framework.log")

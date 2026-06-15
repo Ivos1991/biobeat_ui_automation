@@ -1,0 +1,37 @@
+from __future__ import annotations
+
+from dataclasses import dataclass
+from uuid import uuid4
+
+
+@dataclass(slots=True)
+class PatientAdmissionData:
+    patient_id: str
+    device_id: str
+    gender_at_birth: str | None = None
+    referring_physician: str | None = None
+    first_name: str | None = None
+    last_name: str | None = None
+    date_of_birth: str | None = None
+    weight: str | None = None
+    height: str | None = None
+    additional_notes: str | None = None
+    receive_report_completion_emails: bool = False
+
+
+def build_unique_patient_id(prefix: str = "AUTO") -> str:
+    return f"{prefix}{uuid4().hex[:12].upper()}"
+
+
+def build_happy_path_admission(device_id: str = "676767") -> PatientAdmissionData:
+    return PatientAdmissionData(
+        patient_id=build_unique_patient_id(),
+        device_id=device_id,
+        gender_at_birth="Male",
+        referring_physician="chen.nahoom",
+        first_name="Auto",
+        last_name="Test",
+        weight="70",
+        height="170",
+        additional_notes="Created by live BioBeat UI automation.",
+    )

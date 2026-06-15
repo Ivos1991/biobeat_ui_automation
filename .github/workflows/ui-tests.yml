@@ -1,0 +1,57 @@
+name: BioBeat UI Tests
+
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  ui-tests:
+    runs-on: ubuntu-latest
+    env:
+      WEB_BASE_URL: ${{ vars.WEB_BASE_URL || 'https://bpm-demo.eu.bio-beat.cloud' }}
+      BIOBEAT_USERNAME: ${{ secrets.BIOBEAT_USERNAME || '' }}
+      BIOBEAT_PASSWORD: ${{ secrets.BIOBEAT_PASSWORD || '' }}
+      BROWSER: chromium
+      HEADLESS: true
+      BROWSER_EVIDENCE_MODE: failure_only
+      ARTIFACT_DIR: artifacts
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          python -m pip install -e .[dev]
+
+      - name: Install Playwright browser
+        run: python -m playwright install --with-deps chromium
+
+      - name: Run pytest
+        run: python -m pytest tests/ui -m ui -q --alluredir artifacts/allure-results
+
+      - name: Upload Allure results
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-results
+          if-no-files-found: warn
+          path: artifacts/allure-results/
+
+      - name: Upload Playwright and log artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ui-artifacts
+          if-no-files-found: warn
+          path: |
+            artifacts/playwright/
+            artifacts/screenshots/
+            artifacts/logs/

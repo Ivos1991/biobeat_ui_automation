@@ -11,7 +11,7 @@ def configure_logging(log_dir: Path, level: str = "INFO") -> None:
     log_file = log_dir / "framework.log"
 
     root = logging.getLogger()
-    if getattr(root, "_cyera_logging_configured", False):
+    if getattr(root, "_biobeat_logging_configured", False):
         return
 
     root.setLevel(level)
@@ -26,7 +26,7 @@ def configure_logging(log_dir: Path, level: str = "INFO") -> None:
     root.handlers.clear()
     root.addHandler(stream_handler)
     root.addHandler(file_handler)
-    root._cyera_logging_configured = True  # type: ignore[attr-defined]
+    root._biobeat_logging_configured = True  # type: ignore[attr-defined]
 
 
 def get_logger(name: str) -> logging.Logger:

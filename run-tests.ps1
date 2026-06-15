@@ -1,9 +1,10 @@
 param(
-    [ValidateSet("off", "on_failure", "always")] [string]$EvidenceMode = "on_failure",
+    [ValidateSet("off", "failure_only", "full_evidence")] [string]$EvidenceMode = "failure_only",
     [switch]$Headed,
     [int]$SlowMoMs = 0,
-    [string]$PytestTarget = "tests",
-    [string]$PytestMarker = "",
+    [ValidateSet("chromium", "firefox", "webkit")] [string]$Browser = "chromium",
+    [string]$PytestTarget = "tests\ui",
+    [string]$PytestMarker = "ui",
     [switch]$OpenReport
 )
 
@@ -14,6 +15,7 @@ $allureResultsDir = "artifacts\allure-results"
 $allureReportDir = "artifacts\allure-report"
 
 $env:BROWSER_EVIDENCE_MODE = $EvidenceMode
+$env:BROWSER = $Browser
 $env:HEADLESS = if ($Headed) { "false" } else { "true" }
 $env:SLOW_MO_MS = $SlowMoMs.ToString()
 
