@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import allure
 from playwright.sync_api import Page
 
 from config.settings import Settings
@@ -49,32 +50,53 @@ class PatientAdmissionFlow:
         return self.page_factory.create(PatientLookupPage, self.page)
 
     def login_as_default_user(self) -> None:
-        self.login_page.open()
-        self.login_page.wait_until_ready()
-        self.login_page.login(self.settings.username, self.settings.password)
-        self.app_shell_page.wait_until_ready()
-        self.session_management_page.wait_until_ready()
+        with allure.step("Open /login"):
+            self.login_page.open()
+            self.login_page.wait_until_ready()
+
+        with allure.step("Submit BioBeat credentials"):
+            self.login_page.login(self.settings.username, self.settings.password)
+
+        with allure.step("Wait for Session Management to load after login"):
+            self.app_shell_page.wait_until_ready()
+            self.session_management_page.wait_until_ready()
 
     def start_patient_admission(self) -> None:
         self.login_as_default_user()
         self.open_patient_admission()
 
     def open_patient_admission(self) -> None:
-        self.app_shell_page.open_patient_admission()
-        self.patient_admission_page.wait_until_ready()
+        with allure.step("Open Patient Admission from the side menu"):
+            self.app_shell_page.open_patient_admission()
+
+        with allure.step("Wait for Patient Admission to finish loading"):
+            self.patient_admission_page.wait_until_ready()
 
     def open_session_management(self) -> None:
-        self.app_shell_page.open_session_management()
-        self.session_management_page.wait_until_ready()
+        with allure.step("Open Session Management from the side menu"):
+            self.app_shell_page.open_session_management()
+
+        with allure.step("Wait for Session Management to finish loading"):
+            self.session_management_page.wait_until_ready()
 
     def open_patient_lookup(self) -> None:
-        self.app_shell_page.open_patient_lookup()
-        self.patient_lookup_page.wait_until_ready()
+        with allure.step("Open Patient Lookup from the side menu"):
+            self.app_shell_page.open_patient_lookup()
+
+        with allure.step("Wait for Patient Lookup to finish loading"):
+            self.patient_lookup_page.wait_until_ready()
 
     def submit_admission(self, data: PatientAdmissionData) -> None:
-        self.patient_admission_page.fill_form(data)
-        confirmation_popup = self.patient_admission_page.submit_for_confirmation()
-        confirmation_popup.fill_patient_id(data.patient_id)
-        confirmation_popup.click_confirm()
-        self.session_management_page.wait_for_url("**/session-management")
-        self.session_management_page.wait_until_ready()
+        with allure.step("Fill the Patient Admission form"):
+            self.patient_admission_page.fill_form(data)
+
+        with allure.step("Open the patient-ID confirmation popup"):
+            confirmation_popup = self.patient_admission_page.submit_for_confirmation()
+
+        with allure.step("Confirm the admission with the same Patient ID"):
+            confirmation_popup.fill_patient_id(data.patient_id)
+            confirmation_popup.click_confirm()
+
+        with allure.step("Wait for Session Management to load after submission"):
+            self.session_management_page.wait_for_url("**/session-management")
+            self.session_management_page.wait_until_ready()

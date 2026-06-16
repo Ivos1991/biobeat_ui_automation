@@ -3,6 +3,7 @@ from __future__ import annotations
 from dataclasses import dataclass
 from typing import Any
 
+import allure
 from playwright.sync_api import Locator, expect
 
 
@@ -18,35 +19,42 @@ class AssertionBuilder:
         return self.actual
 
     def is_visible(self) -> AssertionBuilder:
-        expect(self._locator(), self.description).to_be_visible(timeout=self.timeout_ms)
+        with allure.step(self.description):
+            expect(self._locator(), self.description).to_be_visible(timeout=self.timeout_ms)
         return self
 
     def is_hidden(self) -> AssertionBuilder:
-        expect(self._locator(), self.description).to_be_hidden(timeout=self.timeout_ms)
+        with allure.step(self.description):
+            expect(self._locator(), self.description).to_be_hidden(timeout=self.timeout_ms)
         return self
 
     def is_enabled(self) -> AssertionBuilder:
-        expect(self._locator(), self.description).to_be_enabled(timeout=self.timeout_ms)
+        with allure.step(self.description):
+            expect(self._locator(), self.description).to_be_enabled(timeout=self.timeout_ms)
         return self
 
     def is_disabled(self) -> AssertionBuilder:
-        expect(self._locator(), self.description).to_be_disabled(timeout=self.timeout_ms)
+        with allure.step(self.description):
+            expect(self._locator(), self.description).to_be_disabled(timeout=self.timeout_ms)
         return self
 
     def contains_text(self, expected: str) -> AssertionBuilder:
-        expect(self._locator(), self.description).to_contain_text(expected, timeout=self.timeout_ms)
+        with allure.step(self.description):
+            expect(self._locator(), self.description).to_contain_text(expected, timeout=self.timeout_ms)
         return self
 
     def is_equal_to(self, expected: Any) -> AssertionBuilder:
-        if self.actual != expected:
-            raise AssertionError(f"{self.description}: expected {expected!r}, got {self.actual!r}.")
+        with allure.step(self.description):
+            if self.actual != expected:
+                raise AssertionError(f"{self.description}: expected {expected!r}, got {self.actual!r}.")
         return self
 
     def contains(self, expected: Any) -> AssertionBuilder:
-        if expected not in self.actual:
-            raise AssertionError(
-                f"{self.description}: expected to contain {expected!r}, got {self.actual!r}."
-            )
+        with allure.step(self.description):
+            if expected not in self.actual:
+                raise AssertionError(
+                    f"{self.description}: expected to contain {expected!r}, got {self.actual!r}."
+                )
         return self
 
     def is_true(self) -> AssertionBuilder:
@@ -56,8 +64,9 @@ class AssertionBuilder:
         return self.is_equal_to(False)
 
     def is_not_none(self) -> AssertionBuilder:
-        if self.actual is None:
-            raise AssertionError(f"{self.description}: expected a non-null value.")
+        with allure.step(self.description):
+            if self.actual is None:
+                raise AssertionError(f"{self.description}: expected a non-null value.")
         return self
 
 
