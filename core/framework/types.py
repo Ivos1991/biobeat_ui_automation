@@ -1,14 +1,13 @@
 """Shared type contracts used across the framework runtime."""
 
-from enum import Enum
+from enum import StrEnum
 from typing import Any, Literal, NewType
-
 
 TestId = NewType("TestId", str)
 PluginName = NewType("PluginName", str)
 
 BrowserName = Literal["chromium", "firefox", "webkit"]
-EvidenceMode = Literal["off", "failure_only", "full_evidence"]
+EvidenceMode = Literal["full", "failure_only", "screenshot_only"]
 HookName = Literal[
     "before_session",
     "after_session",
@@ -22,7 +21,7 @@ HookName = Literal[
 ]
 
 
-class Environment(str, Enum):
+class Environment(StrEnum):
     """Supported framework execution environments."""
 
     LOCAL = "local"

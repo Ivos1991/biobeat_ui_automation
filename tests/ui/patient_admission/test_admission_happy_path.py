@@ -9,7 +9,10 @@ from utils.assertions import assert_that
 @pytest.mark.ui
 @pytest.mark.smoke
 @pytest.mark.collect_all_evidence
-def test_admission_happy_path_expects_pending_session_created_in_session_management(admission_flow,managed_admission) -> None:
+def test_admission_happy_path_expects_pending_session_created_in_session_management(
+    admission_flow,
+    managed_admission,
+) -> None:
     with allure.step("Login and open Patient Admission"):
         admission_flow.start_patient_admission()
 

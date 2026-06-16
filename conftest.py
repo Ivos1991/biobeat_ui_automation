@@ -12,6 +12,12 @@ from config.settings import Settings
 from core.framework.hooks import FailureContext, TestContext
 from core.framework.runtime import FrameworkRuntime, build_runtime
 from core.framework.types import TestId
+from core.reporting import write_allure_environment
+from core.testing_utils.evidence import (
+    should_attach_test_evidence,
+    should_capture_trace,
+    should_record_video,
+)
 from core.testing_utils.playwright_artifacts import (
     attach_artifacts_from_output_path,
     attach_log_file,
@@ -31,9 +37,7 @@ def _runtime(config: pytest.Config) -> FrameworkRuntime:
 def _apply_playwright_defaults(config: pytest.Config, items: list[pytest.Item]) -> None:
     runtime = _runtime(config)
     settings = runtime.settings
-    force_always = settings.browser_evidence_mode == "full_evidence" or any(
-        item.get_closest_marker("collect_all_evidence") for item in items
-    )
+    collect_all_requested = any(item.get_closest_marker("collect_all_evidence") for item in items)
 
     if getattr(config.option, "browser", None) in (None, []):
         config.option.browser = [settings.browser_name]
@@ -41,21 +45,48 @@ def _apply_playwright_defaults(config: pytest.Config, items: list[pytest.Item]) 
     if getattr(config.option, "output", None) == "test-results":
         config.option.output = str(Path(settings.artifact_dir) / "playwright")
 
-    if settings.browser_evidence_mode == "off":
-        return
-
     if getattr(config.option, "screenshot", None) == "off":
-        config.option.screenshot = "on" if force_always else "only-on-failure"
+        config.option.screenshot = (
+            "on"
+            if collect_all_requested or settings.browser_evidence_mode == "full"
+            else "only-on-failure"
+        )
 
     if getattr(config.option, "video", None) == "off":
-        config.option.video = "on" if force_always else "retain-on-failure"
+        config.option.video = (
+            "on"
+            if collect_all_requested or settings.browser_evidence_mode == "full"
+            else "retain-on-failure"
+            if should_record_video(settings.browser_evidence_mode, collect_all_requested)
+            else "off"
+        )
 
     if getattr(config.option, "tracing", None) == "off":
-        config.option.tracing = "on" if force_always else "retain-on-failure"
+        config.option.tracing = (
+            "on"
+            if collect_all_requested or settings.browser_evidence_mode == "full"
+            else "retain-on-failure"
+            if should_capture_trace(settings.browser_evidence_mode, collect_all_requested)
+            else "off"
+        )
 
 
 def pytest_configure(config: pytest.Config) -> None:
     _runtime(config)
+
+
+@pytest.fixture(scope="session", autouse=True)
+def write_environment_metadata(settings: Settings) -> None:
+    write_allure_environment(
+        settings.allure_results_dir,
+        {
+            "base_url": settings.web_base_url,
+            "browser": settings.browser_name,
+            "browser_evidence_mode": settings.browser_evidence_mode,
+            "environment": settings.runtime.environment.value,
+            "headless": str(settings.headless).lower(),
+        },
+    )
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
@@ -142,17 +173,21 @@ def attach_ui_artifacts(request, settings: Settings):
     yield
 
     report = getattr(request.node, "rep_call", None)
+    test_failed = bool(report and report.failed)
     collect_all_evidence = bool(request.node.get_closest_marker("collect_all_evidence"))
-    always_collect = settings.browser_evidence_mode == "full_evidence" or collect_all_evidence
-    should_collect = bool(report and report.failed) or always_collect
+    should_collect = should_attach_test_evidence(
+        settings.browser_evidence_mode,
+        collect_all_evidence,
+        test_failed,
+    )
     if not should_collect:
         return
 
     page = request.node.funcargs.get("page")
     if isinstance(page, Page):
-        screenshot_path = settings.artifact_dir / "screenshots" / f"{request.node.name}.png"
+        screenshot_path = settings.screenshots_dir / f"{request.node.name}.png"
         try:
-            attach_page_screenshot(page, screenshot_path)
+            attach_page_screenshot(page, screenshot_path, test_failed=test_failed)
         except Exception:
             pass
 

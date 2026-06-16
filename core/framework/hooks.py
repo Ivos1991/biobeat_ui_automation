@@ -89,7 +89,15 @@ class HookManager:
             )
         }
 
-    def register(self, name: HookName, callback: HookHandler, *, order: int = 100, owner: str = "framework", critical: bool = False) -> None:
+    def register(
+        self,
+        name: HookName,
+        callback: HookHandler,
+        *,
+        order: int = 100,
+        owner: str = "framework",
+        critical: bool = False,
+    ) -> None:
         self._handlers[name].append(
             RegisteredHook(order=order, name=name, callback=callback, owner=owner, critical=critical)
         )

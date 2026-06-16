@@ -4,17 +4,46 @@ on:
   push:
   pull_request:
   workflow_dispatch:
+    inputs:
+      marker_selection:
+        description: "Marker group to run"
+        required: true
+        default: "all_markers"
+        type: choice
+        options:
+          - all_markers
+          - smoke
+          - custom
+      custom_marker:
+        description: "Custom pytest marker expression when marker_selection=custom"
+        required: false
+        default: ""
+        type: string
+      evidence_mode:
+        description: "Playwright evidence collection mode"
+        required: true
+        default: "failure_only"
+        type: choice
+        options:
+          - failure_only
+          - full
+          - screenshot_only
+
+permissions:
+  contents: write
 
 jobs:
   ui-tests:
     runs-on: ubuntu-latest
+    outputs:
+      has_allure_results: ${{ steps.detect_allure_results.outputs.has_results }}
     env:
       WEB_BASE_URL: ${{ vars.WEB_BASE_URL || 'https://bpm-demo.eu.bio-beat.cloud' }}
       BIOBEAT_USERNAME: ${{ secrets.BIOBEAT_USERNAME || '' }}
       BIOBEAT_PASSWORD: ${{ secrets.BIOBEAT_PASSWORD || '' }}
       BROWSER: chromium
       HEADLESS: true
-      BROWSER_EVIDENCE_MODE: failure_only
+      BROWSER_EVIDENCE_MODE: ${{ inputs.evidence_mode || vars.BROWSER_EVIDENCE_MODE || 'failure_only' }}
       ARTIFACT_DIR: artifacts
 
     steps:
@@ -35,7 +64,45 @@ jobs:
         run: python -m playwright install --with-deps chromium
 
       - name: Run pytest
-        run: python -m pytest tests/ui -m ui -q --alluredir artifacts/allure-results
+        shell: bash
+        run: |
+          marker_expression="ui"
+          case "${{ github.event.inputs.marker_selection || 'all_markers' }}" in
+            smoke)
+              marker_expression="ui and smoke"
+              ;;
+            custom)
+              if [ -z "${{ github.event.inputs.custom_marker || '' }}" ]; then
+                echo "custom_marker is required when marker_selection=custom" >&2
+                exit 1
+              fi
+              marker_expression="${{ github.event.inputs.custom_marker }}"
+              ;;
+            *)
+              marker_expression="ui"
+              ;;
+          esac
+          echo "Running pytest marker expression: ${marker_expression}"
+          python -m pytest tests/ui -m "${marker_expression}" -q --alluredir artifacts/allure-results
+
+      - name: Detect Allure results
+        if: always()
+        id: detect_allure_results
+        shell: bash
+        run: |
+          if [ -d artifacts/allure-results ] && [ "$(find artifacts/allure-results -type f | head -n 1)" ]; then
+            echo "has_results=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_results=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Install Allure CLI
+        if: always() && steps.detect_allure_results.outputs.has_results == 'true'
+        run: npm install -g allure-commandline
+
+      - name: Generate Allure HTML report
+        if: always() && steps.detect_allure_results.outputs.has_results == 'true'
+        run: allure generate artifacts/allure-results --clean --single-file -o artifacts/allure-report
 
       - name: Upload Allure results
         if: always()
@@ -44,6 +111,14 @@ jobs:
           name: allure-results
           if-no-files-found: warn
           path: artifacts/allure-results/
+
+      - name: Upload Allure HTML report
+        if: always() && steps.detect_allure_results.outputs.has_results == 'true'
+        uses: actions/upload-artifact@v4
+        with:
+          name: allure-html-report
+          if-no-files-found: warn
+          path: artifacts/allure-report/
 
       - name: Upload Playwright and log artifacts
         if: always()
@@ -55,3 +130,70 @@ jobs:
             artifacts/playwright/
             artifacts/screenshots/
             artifacts/logs/
+
+  publish-summary-no-report:
+    if: always() && needs.ui-tests.outputs.has_allure_results != 'true'
+    needs: ui-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish CI summary
+        run: |
+          {
+            echo "## UI Test Report Summary"
+            echo
+            echo "- Marker selection: \`${{ github.event.inputs.marker_selection || 'all_markers' }}\`"
+            echo "- Custom marker: \`${{ github.event.inputs.custom_marker || 'n/a' }}\`"
+            echo "- Evidence mode: \`${{ github.event.inputs.evidence_mode || vars.BROWSER_EVIDENCE_MODE || 'failure_only' }}\`"
+            echo "- No Allure HTML report was generated in this workflow run."
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  deploy-report:
+    if: always() && needs.ui-tests.outputs.has_allure_results == 'true' && (github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    needs: ui-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download Allure HTML report
+        uses: actions/download-artifact@v4
+        with:
+          name: allure-html-report
+          path: artifacts/allure-report
+
+      - name: Publish report to gh-pages
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_branch: gh-pages
+          publish_dir: artifacts/allure-report
+          force_orphan: true
+
+      - name: Publish CI summary
+        run: |
+          {
+            echo "## UI Test Report Summary"
+            echo
+            echo "- Marker selection: \`${{ github.event.inputs.marker_selection || 'all_markers' }}\`"
+            echo "- Custom marker: \`${{ github.event.inputs.custom_marker || 'n/a' }}\`"
+            echo "- Evidence mode: \`${{ github.event.inputs.evidence_mode || vars.BROWSER_EVIDENCE_MODE || 'failure_only' }}\`"
+            echo "- Click [here](https://${{ github.repository_owner }}.github.io/${{ github.event.repository.name }}/) to open the Allure report."
+            echo "- Workflow artifact backup: [allure-html-report](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts)"
+          } >> "$GITHUB_STEP_SUMMARY"
+
+  publish-summary-artifact-only:
+    if: always() && needs.ui-tests.outputs.has_allure_results == 'true' && !(github.event_name == 'workflow_dispatch' || github.ref == 'refs/heads/main')
+    needs: ui-tests
+    runs-on: ubuntu-latest
+    steps:
+      - name: Publish CI summary
+        run: |
+          {
+            echo "## UI Test Report Summary"
+            echo
+            echo "- Marker selection: \`${{ github.event.inputs.marker_selection || 'all_markers' }}\`"
+            echo "- Custom marker: \`${{ github.event.inputs.custom_marker || 'n/a' }}\`"
+            echo "- Evidence mode: \`${{ github.event.inputs.evidence_mode || vars.BROWSER_EVIDENCE_MODE || 'failure_only' }}\`"
+            echo "- Click [here](https://github.com/${{ github.repository }}/actions/runs/${{ github.run_id }}/artifacts) to open the workflow artifacts page."
+            echo "- GitHub Pages deployment is skipped for pull request and non-main push runs."
+          } >> "$GITHUB_STEP_SUMMARY"

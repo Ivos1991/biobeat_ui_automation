@@ -27,16 +27,19 @@ def _resolve_evidence_mode(value: str | None) -> EvidenceMode:
     raw = (value or "failure_only").strip().lower()
     aliases = {
         "on_failure": "failure_only",
-        "always": "full_evidence",
-        "off": "off",
+        "always": "full",
+        "off": "screenshot_only",
         "failure_only": "failure_only",
-        "full_evidence": "full_evidence",
+        "full_evidence": "full",
+        "full": "full",
+        "screenshot_only": "screenshot_only",
     }
     try:
         return aliases[raw]  # type: ignore[return-value]
     except KeyError as error:
         raise ValueError(
-            "BROWSER_EVIDENCE_MODE must be one of: off, on_failure, always, failure_only, full_evidence"
+            "BROWSER_EVIDENCE_MODE must be one of: full, failure_only, screenshot_only, "
+            "always, on_failure, off, full_evidence"
         ) from error
 
 
@@ -91,6 +94,10 @@ class ReportingSettings:
     @property
     def log_dir(self) -> Path:
         return self.artifact_dir / "logs"
+
+    @property
+    def screenshots_dir(self) -> Path:
+        return self.artifact_dir / "screenshots"
 
     @property
     def allure_report_dir(self) -> Path:
@@ -169,6 +176,10 @@ class Settings:
     @property
     def log_dir(self) -> Path:
         return self.reporting.log_dir
+
+    @property
+    def screenshots_dir(self) -> Path:
+        return self.reporting.screenshots_dir
 
     @property
     def allure_report_dir(self) -> Path:

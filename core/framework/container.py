@@ -1,9 +1,9 @@
 """Explicit dependency injection container used by the test framework."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from threading import RLock
-from typing import Callable, Generic, TypeVar
-
+from typing import Generic, TypeVar
 
 T = TypeVar("T")
 

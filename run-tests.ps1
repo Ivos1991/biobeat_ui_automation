@@ -1,5 +1,5 @@
 param(
-    [ValidateSet("off", "failure_only", "full_evidence")] [string]$EvidenceMode = "failure_only",
+    [ValidateSet("failure_only", "full", "screenshot_only")] [string]$EvidenceMode = "failure_only",
     [switch]$Headed,
     [int]$SlowMoMs = 0,
     [ValidateSet("chromium", "firefox", "webkit")] [string]$Browser = "chromium",
@@ -37,7 +37,7 @@ if ($PytestMarker -ne "") {
 
 $allureCli = Get-Command allure.cmd -ErrorAction SilentlyContinue
 if ($null -ne $allureCli) {
-    & $allureCli.Source generate $allureResultsDir --clean -o $allureReportDir
+    & $allureCli.Source generate $allureResultsDir --clean --single-file -o $allureReportDir
     Write-Host "Allure report generated at $allureReportDir"
     Write-Host "Open it with: & `"$($allureCli.Source)`" open $allureReportDir"
 

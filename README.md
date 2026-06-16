@@ -95,6 +95,22 @@ Compatibility aliases are also supported:
 - `APP_USERNAME`
 - `APP_PASSWORD`
 
+## Evidence Modes
+
+`BROWSER_EVIDENCE_MODE` supports:
+
+- `full`: always attach screenshot, trace, video, and log evidence
+- `failure_only`: attach evidence only when a test fails
+- `screenshot_only`: attach only failure screenshots
+
+Legacy values are normalized for compatibility:
+
+- `always -> full`
+- `on_failure -> failure_only`
+- `off -> screenshot_only`
+
+The `collect_all_evidence` marker overrides the global mode for a test and forces the full configured evidence set.
+
 ## Running Tests
 
 Collect tests only:
@@ -127,7 +143,7 @@ Run through the helper script:
 Generate a local report after a run:
 
 ```powershell
-allure generate artifacts\allure-results --clean -o artifacts\allure-report
+allure generate artifacts\allure-results --clean --single-file -o artifacts\allure-report
 allure open artifacts\allure-report
 ```
 
@@ -149,8 +165,18 @@ The workflow:
 - installs Python dependencies
 - installs Playwright Chromium
 - runs `python -m pytest tests/ui -m ui -q --alluredir artifacts/allure-results`
+- generates a single-file Allure HTML report
 - uploads Allure results
+- uploads the Allure HTML report
 - uploads Playwright screenshots, videos, traces, and logs
+- publishes the HTML report to `gh-pages` for manual runs and pushes to `main`
+
+Manual dispatch supports:
+
+- `marker_selection=all_markers`: run the full `ui` suite
+- `marker_selection=smoke`: run `ui and smoke`
+- `marker_selection=custom`: run the expression provided in `custom_marker`
+- `evidence_mode`: choose `failure_only`, `full`, or `screenshot_only`
 
 ## Manual Test Cases
 

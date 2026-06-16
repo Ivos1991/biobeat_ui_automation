@@ -31,13 +31,14 @@ def attach_artifacts_from_output_path(output_path: str | Path) -> None:
         attach_file(path.name, path, attachment_type_for_path(path))
 
 
-def attach_page_screenshot(page: Page, screenshot_path: Path) -> None:
+def attach_page_screenshot(page: Page, screenshot_path: Path, *, test_failed: bool) -> None:
     if page.is_closed():
         return
 
     screenshot_path.parent.mkdir(parents=True, exist_ok=True)
     page.screenshot(path=str(screenshot_path), full_page=True)
-    attach_file("failure-screenshot", screenshot_path, allure.attachment_type.PNG)
+    attachment_name = "failure-screenshot" if test_failed else "page-screenshot"
+    attach_file(attachment_name, screenshot_path, allure.attachment_type.PNG)
     attach_text("page-url", page.url)
 
 
