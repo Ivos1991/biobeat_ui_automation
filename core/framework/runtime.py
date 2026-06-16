@@ -27,11 +27,13 @@ def build_runtime(settings: Settings | None = None) -> FrameworkRuntime:
     """Build and wire the framework runtime."""
 
     resolved_settings = settings or Settings.from_env()
+    # Logging is configured first so every later bootstrap step can emit diagnostics.
     configure_logging(resolved_settings.reporting.log_dir, resolved_settings.runtime.log_level)
     logger = get_logger("framework")
     hooks = HookManager(logger)
     plugins = PluginManager(logger)
     container = ServiceContainer()
+    # The session context carries run-level metadata across hooks and plugins.
     session_context = SessionContext(session_id=str(uuid.uuid4()), settings=resolved_settings)
 
     runtime = FrameworkRuntime(
@@ -43,11 +45,13 @@ def build_runtime(settings: Settings | None = None) -> FrameworkRuntime:
         session_context=session_context,
     )
 
+    # Register the core shared services so fixtures and plugins can resolve them consistently.
     container.register_singleton(FrameworkRuntime, instance=runtime)
     container.register_singleton(Settings, instance=resolved_settings)
     container.register_singleton(HookManager, instance=hooks)
     container.register_singleton(PluginManager, instance=plugins)
 
+    # Plugin activation can register lifecycle hooks before the test session starts.
     plugins.activate(runtime, resolved_settings.plugins.enabled)
     hooks.emit("before_session", session_context)
     return runtime

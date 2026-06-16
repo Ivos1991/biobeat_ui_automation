@@ -20,8 +20,10 @@ class PageObjectFactory:
     """
 
     def __init__(self, settings: Settings, runtime: FrameworkRuntime) -> None:
+        """Persist the shared objects injected into every page object."""
         self.settings = settings
         self.runtime = runtime
 
     def create(self, page_type: type[PageObjectT], page: Page) -> PageObjectT:
+        """Instantiate a page object with the active Playwright page and framework context."""
         return page_type(page, self.settings, runtime=self.runtime)

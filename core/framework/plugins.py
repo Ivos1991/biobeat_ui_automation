@@ -32,6 +32,7 @@ def plugin(name: str) -> Any:
     """Decorator used by plugins to self-register at import time."""
 
     def decorator(plugin_type: type[FrameworkPlugin]) -> type[FrameworkPlugin]:
+        """Store the plugin type in the in-memory registry under its configured name."""
         _PLUGIN_REGISTRY[name] = plugin_type
         return plugin_type
 
@@ -40,6 +41,7 @@ def plugin(name: str) -> Any:
 
 @dataclass(slots=True)
 class LoadedPlugin:
+    """Normalized record of an activated plugin instance."""
     name: PluginName
     instance: FrameworkPlugin
 
@@ -48,19 +50,23 @@ class PluginManager:
     """Discovers and activates configured framework plugins."""
 
     def __init__(self, logger: Any) -> None:
+        """Initialize the plugin manager with an empty activation registry."""
         self._logger = logger
         self._loaded: dict[str, LoadedPlugin] = {}
 
     @property
     def loaded_plugins(self) -> tuple[LoadedPlugin, ...]:
+        """Expose the activated plugins as an immutable tuple for diagnostics or assertions."""
         return tuple(self._loaded.values())
 
     def discover(self, package_name: str = "core.plugins.builtin") -> None:
+        """Import every plugin module from the configured package so decorators can register them."""
         package = importlib.import_module(package_name)
         for module in pkgutil.iter_modules(package.__path__, f"{package_name}."):
             importlib.import_module(module.name)
 
     def activate(self, runtime: Any, enabled_plugins: tuple[str, ...]) -> None:
+        """Instantiate and register the configured plugins against the active runtime."""
         self.discover()
         for plugin_name in enabled_plugins:
             plugin_type = _PLUGIN_REGISTRY.get(plugin_name)

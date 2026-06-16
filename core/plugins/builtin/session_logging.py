@@ -12,15 +12,19 @@ class SessionLoggerPlugin:
     description = "Logs session and test lifecycle transitions."
 
     def register(self, runtime) -> None:
+        """Register the logging callbacks that track session and test lifecycle transitions."""
         def before_session(context: SessionContext) -> None:
+            """Log the start of a framework session together with its execution environment."""
             runtime.logger.info(
                 "Session %s started in %s", context.session_id, runtime.settings.runtime.environment.value
             )
 
         def before_test(context: TestContext) -> None:
+            """Log the start of each collected test just before pytest setup runs."""
             runtime.logger.info("Starting test %s", context.nodeid)
 
         def after_test(context: TestContext) -> None:
+            """Log the end of each test together with the final pytest outcome."""
             runtime.logger.info(
                 "Finished test %s with outcome=%s", context.nodeid, context.outcome
             )

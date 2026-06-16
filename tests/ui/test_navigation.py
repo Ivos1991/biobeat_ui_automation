@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 import pytest
 
@@ -9,6 +7,7 @@ from utils.assertions import assert_that
 @pytest.mark.ui
 @pytest.mark.smoke
 def test_navigation_to_patient_admission_expects_form_to_load(admission_flow) -> None:
+    """Verify that an authenticated user can open Patient Admission and see the core fields."""
     with allure.step("Login with the default BioBeat user"):
         admission_flow.login_as_default_user()
 
@@ -32,6 +31,7 @@ def test_navigation_to_patient_admission_expects_form_to_load(admission_flow) ->
 
 @pytest.mark.ui
 def test_navigation_to_patient_lookup_expects_search_and_table_to_load(admission_flow) -> None:
+    """Verify that an authenticated user can open Patient Lookup and see its search surface."""
     with allure.step("Login with the default BioBeat user"):
         admission_flow.login_as_default_user()
 

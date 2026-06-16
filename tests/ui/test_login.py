@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 import pytest
 
@@ -12,6 +10,7 @@ from utils.assertions import assert_that
 @pytest.mark.ui
 @pytest.mark.smoke
 def test_login_expects_user_can_authenticate_and_reach_session_management(page, page_factory, settings) -> None:
+    """Verify that the configured BioBeat user can log in and land on Session Management."""
     login_page = page_factory.create(LoginPage, page)
     shell_page = page_factory.create(AppShellPage, page)
     session_page = page_factory.create(SessionManagementPage, page)

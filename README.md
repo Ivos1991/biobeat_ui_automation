@@ -73,6 +73,14 @@ python -m playwright install chromium
 Copy-Item .env.example .env
 ```
 
+Fill the local `.env` with the live credentials before running the suite locally:
+
+```dotenv
+WEB_BASE_URL= the provided url
+BIOBEAT_USERNAME= the provided username
+BIOBEAT_PASSWORD= the provided password
+```
+
 ## Configuration
 
 The suite reads the following environment variables:
@@ -90,7 +98,12 @@ The suite reads the following environment variables:
 - `IGNORE_HTTPS_ERRORS`
 - `ARTIFACT_DIR`
 
-Compatibility aliases are also supported:
+For local runs, prefer the same names used by CI secrets:
+
+- `BIOBEAT_USERNAME`
+- `BIOBEAT_PASSWORD`
+
+Compatibility aliases are also supported when a local environment already uses older names:
 
 - `APP_USERNAME`
 - `APP_PASSWORD`
@@ -99,8 +112,8 @@ Compatibility aliases are also supported:
 
 `BROWSER_EVIDENCE_MODE` supports:
 
-- `full`: always attach screenshot, trace, video, and log evidence
-- `failure_only`: attach evidence only when a test fails
+- `full`: always attach screenshot, trace, video, and framework log evidence
+- `failure_only`: record evidence during the run and attach it only when a test fails
 - `screenshot_only`: attach only failure screenshots
 
 Legacy values are normalized for compatibility:
@@ -140,12 +153,28 @@ Run through the helper script:
 
 ## Allure
 
-Generate a local report after a run:
+Pytest writes raw Allure results to `artifacts\allure-results` when tests are run with `--alluredir`.
+
+Generate a local HTML report after a run:
 
 ```powershell
 allure generate artifacts\allure-results --clean -o artifacts\allure-report
 allure open artifacts\allure-report
 ```
+
+If you use the helper script, it also generates the HTML report automatically when the Allure CLI is installed:
+
+```powershell
+.\run-tests.ps1
+```
+
+At the end of a run, collect these folders if you want to archive the execution evidence locally:
+
+- `artifacts\allure-results`
+- `artifacts\allure-report`
+- `artifacts\playwright`
+- `artifacts\screenshots`
+- `artifacts\logs`
 
 ## CI
 
@@ -155,6 +184,8 @@ Expected GitHub repository secrets:
 
 - `BIOBEAT_USERNAME`
 - `BIOBEAT_PASSWORD`
+
+These are the same variable names supported by the local `.env`, so local and CI configuration stay aligned.
 
 Optional repository variable:
 
@@ -186,4 +217,3 @@ See [docs/manual_test_cases.md](docs/manual_test_cases.md).
 
 - The suite was verified live against the BioBeat application.
 - Cleanup is built into the creation flow and verified through a dedicated cleanup test.
-- No xfail placeholders, exploratory exceptions, or generated TODO tests remain in the active UI suite.

@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 
 import allure
@@ -15,15 +13,18 @@ DEVICE_NOT_ACTIVATED_ID = "676733"
 
 @dataclass(slots=True)
 class ManagedAdmission:
+    """Hold the generated admission data together with cleanup state for teardown."""
     data: PatientAdmissionData
     cleanup_required: bool = True
 
 
 def build_managed_admission() -> ManagedAdmission:
+    """Build the standard happy-path admission payload using the verified creation device."""
     return ManagedAdmission(data=build_happy_path_admission(device_id=CREATION_DEVICE_ID))
 
 
 def wait_for_session_to_disappear(session_page, patient_id: str, attempts: int = 6) -> bool:
+    """Refresh and re-search until a removed session disappears from the live table."""
     # Session Management updates asynchronously after removals, so refresh and re-search
     # until the row is gone or we exhaust a small bounded retry window.
     for _ in range(attempts):
@@ -36,6 +37,7 @@ def wait_for_session_to_disappear(session_page, patient_id: str, attempts: int =
 
 
 def cleanup_session_by_patient_id(session_page, patient_id: str) -> bool:
+    """Remove a live session through the UI when it is still present in Session Management."""
     with allure.step(f"Search for session '{patient_id}' before cleanup"):
         session_page.search_session(patient_id)
         if not session_page.has_session(patient_id):

@@ -5,6 +5,7 @@ import allure
 
 
 def attach_json(name: str, payload: object) -> None:
+    """Attach a JSON-serializable payload to Allure with stable formatting."""
     allure.attach(
         json.dumps(payload, indent=2, sort_keys=True, default=str),
         name=name,
@@ -13,14 +14,17 @@ def attach_json(name: str, payload: object) -> None:
 
 
 def attach_text(name: str, text: str) -> None:
+    """Attach plain-text diagnostic content to Allure."""
     allure.attach(text, name=name, attachment_type=allure.attachment_type.TEXT)
 
 
 def attach_file(name: str, path: Path, attachment_type: allure.attachment_type = allure.attachment_type.TEXT) -> None:
+    """Attach an existing file artifact to Allure using the requested media type."""
     allure.attach.file(str(path), name=name, attachment_type=attachment_type)
 
 
 def write_allure_environment(results_dir: Path, values: dict[str, str]) -> None:
+    """Write the Allure environment.properties file for the current execution."""
     results_dir.mkdir(parents=True, exist_ok=True)
     environment_file = results_dir / "environment.properties"
     environment_file.write_text(

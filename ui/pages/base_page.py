@@ -23,6 +23,7 @@ class BasePage:
     )
 
     def __init__(self, page: Page, settings: Settings, *, runtime: FrameworkRuntime | None = None) -> None:
+        """Apply the shared Playwright timeouts and keep access to runtime-level context."""
         self.page = page
         self.settings = settings
         self.runtime = runtime
@@ -31,9 +32,11 @@ class BasePage:
 
     @property
     def current_url(self) -> str:
+        """Expose the browser URL for route assertions in tests."""
         return self.page.url
 
     def goto(self, path: str) -> None:
+        """Open an application-relative route and wait for initial loading to settle."""
         with allure.step(f"Open {path}"):
             self.page.goto(
                 f"{self.settings.web_base_url.rstrip('/')}/{path.lstrip('/')}",
@@ -42,6 +45,7 @@ class BasePage:
         self.wait_for_loading_to_finish()
 
     def wait_for_loading_to_finish(self, settle_ms: int = 400) -> None:
+        """Wait for the known BioBeat loader variants to disappear before continuing."""
         self.page.wait_for_timeout(settle_ms)
         for selector in self._LOADER_SELECTORS:
             locator = self.page.locator(selector)
@@ -55,4 +59,5 @@ class BasePage:
                 continue
 
     def wait_for_url(self, url_glob: str) -> None:
+        """Block until navigation reaches the expected route pattern."""
         self.page.wait_for_url(url_glob, timeout=self.settings.timeouts.navigation_timeout_ms * 2)

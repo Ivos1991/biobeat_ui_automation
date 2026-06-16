@@ -6,6 +6,7 @@ from typing import Any, Literal, NewType
 TestId = NewType("TestId", str)
 PluginName = NewType("PluginName", str)
 
+# Literal aliases keep the framework interfaces explicit without introducing heavy wrapper types.
 BrowserName = Literal["chromium", "firefox", "webkit"]
 EvidenceMode = Literal["full", "failure_only", "screenshot_only"]
 HookName = Literal[

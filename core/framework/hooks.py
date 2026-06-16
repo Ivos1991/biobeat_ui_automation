@@ -9,6 +9,7 @@ from core.framework.types import HookName, Metadata, TestId
 
 @dataclass(slots=True)
 class SessionContext:
+    """Runtime metadata passed to session-level hooks before and after the full run."""
     session_id: str
     settings: object
     metadata: Metadata = field(default_factory=dict)
@@ -16,6 +17,7 @@ class SessionContext:
 
 @dataclass(slots=True)
 class TestContext:
+    """Per-test metadata passed to test lifecycle hooks during setup, call, and teardown."""
     test_id: TestId
     nodeid: str
     name: str
@@ -26,6 +28,7 @@ class TestContext:
 
 @dataclass(slots=True)
 class StepContext:
+    """Optional context shape for step-level hooks when the framework emits nested steps."""
     test: TestContext
     step_name: str
     metadata: Metadata = field(default_factory=dict)
@@ -33,6 +36,7 @@ class StepContext:
 
 @dataclass(slots=True)
 class ApiCallContext:
+    """Metadata emitted around API calls when a client integrates with framework hooks."""
     client_name: str
     method: str
     url: str
@@ -47,6 +51,7 @@ class ApiCallContext:
 
 @dataclass(slots=True)
 class FailureContext:
+    """Failure payload passed to hooks so plugins can attach diagnostics and evidence."""
     test: TestContext
     error: BaseException | None = None
     report: Any | None = None
@@ -57,11 +62,13 @@ HookContext = SessionContext | TestContext | StepContext | ApiCallContext | Fail
 
 
 class HookHandler(Protocol):
+    """Callable contract implemented by hook callbacks registered with the HookManager."""
     def __call__(self, context: HookContext) -> None: ...
 
 
 @dataclass(order=True, slots=True)
 class RegisteredHook:
+    """Normalized hook registration entry used for ordering and diagnostics."""
     order: int
     name: HookName
     callback: HookHandler
@@ -73,6 +80,7 @@ class HookManager:
     """Registers and executes framework lifecycle hooks."""
 
     def __init__(self, logger: Any) -> None:
+        """Initialize the ordered hook registry for all supported framework hook names."""
         self._logger = logger
         self._handlers: dict[HookName, list[RegisteredHook]] = {
             name: []
@@ -98,12 +106,14 @@ class HookManager:
         owner: str = "framework",
         critical: bool = False,
     ) -> None:
+        """Register a callback for a named hook with ordering and criticality metadata."""
         self._handlers[name].append(
             RegisteredHook(order=order, name=name, callback=callback, owner=owner, critical=critical)
         )
         self._handlers[name].sort()
 
     def emit(self, name: HookName, context: HookContext) -> list[BaseException]:
+        """Execute all callbacks for a hook, isolate failures, and return any non-critical errors."""
         failures: list[BaseException] = []
         for handler in self._handlers[name]:
             started = perf_counter()

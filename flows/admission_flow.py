@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 from playwright.sync_api import Page
 
@@ -25,31 +23,38 @@ class PatientAdmissionFlow:
     """
 
     def __init__(self, page: Page, page_factory: PageObjectFactory, settings: Settings) -> None:
+        """Store the shared dependencies needed to orchestrate the admission journey."""
         self.page = page
         self.page_factory = page_factory
         self.settings = settings
 
     @property
     def login_page(self) -> LoginPage:
+        """Return the login page object bound to the active Playwright page."""
         return self.page_factory.create(LoginPage, self.page)
 
     @property
     def app_shell_page(self) -> AppShellPage:
+        """Return the shared authenticated shell used for left-menu navigation."""
         return self.page_factory.create(AppShellPage, self.page)
 
     @property
     def patient_admission_page(self) -> PatientAdmissionPage:
+        """Return the page object for the Patient Admission form."""
         return self.page_factory.create(PatientAdmissionPage, self.page)
 
     @property
     def session_management_page(self) -> SessionManagementPage:
+        """Return the page object for the Session Management screen."""
         return self.page_factory.create(SessionManagementPage, self.page)
 
     @property
     def patient_lookup_page(self) -> PatientLookupPage:
+        """Return the page object for the Patient Lookup screen."""
         return self.page_factory.create(PatientLookupPage, self.page)
 
     def login_as_default_user(self) -> None:
+        """Authenticate with the configured BioBeat credentials and wait for the landing screen."""
         with allure.step("Open /login"):
             self.login_page.open()
             self.login_page.wait_until_ready()
@@ -62,10 +67,12 @@ class PatientAdmissionFlow:
             self.session_management_page.wait_until_ready()
 
     def start_patient_admission(self) -> None:
+        """Perform the standard login-and-navigation sequence needed before admission tests."""
         self.login_as_default_user()
         self.open_patient_admission()
 
     def open_patient_admission(self) -> None:
+        """Navigate from the authenticated shell into Patient Admission."""
         with allure.step("Open Patient Admission from the side menu"):
             self.app_shell_page.open_patient_admission()
 
@@ -73,6 +80,7 @@ class PatientAdmissionFlow:
             self.patient_admission_page.wait_until_ready()
 
     def open_session_management(self) -> None:
+        """Navigate from the authenticated shell into Session Management."""
         with allure.step("Open Session Management from the side menu"):
             self.app_shell_page.open_session_management()
 
@@ -80,6 +88,7 @@ class PatientAdmissionFlow:
             self.session_management_page.wait_until_ready()
 
     def open_patient_lookup(self) -> None:
+        """Navigate from the authenticated shell into Patient Lookup."""
         with allure.step("Open Patient Lookup from the side menu"):
             self.app_shell_page.open_patient_lookup()
 
@@ -87,6 +96,7 @@ class PatientAdmissionFlow:
             self.patient_lookup_page.wait_until_ready()
 
     def submit_admission(self, data: PatientAdmissionData) -> None:
+        """Submit a fully populated admission and finish the confirmation-popup handshake."""
         with allure.step("Fill the Patient Admission form"):
             self.patient_admission_page.fill_form(data)
 

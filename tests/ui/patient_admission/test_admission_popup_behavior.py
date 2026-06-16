@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 import pytest
 
@@ -9,6 +7,7 @@ from utils.assertions import assert_that
 
 @pytest.mark.ui
 def test_confirmation_popup_enablement_expects_exact_patient_id_before_confirm(admission_flow) -> None:
+    """Verify the admission confirmation popup enables only for the exact patient ID."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -51,6 +50,7 @@ def test_confirmation_popup_enablement_expects_exact_patient_id_before_confirm(a
 
 @pytest.mark.ui
 def test_exit_popup_behavior_expects_cancel_to_keep_form_and_leave_to_exit(admission_flow) -> None:
+    """Verify the exit popup preserves draft data on cancel and leaves on explicit confirmation."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):

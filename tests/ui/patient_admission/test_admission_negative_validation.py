@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 import pytest
 
@@ -10,6 +8,7 @@ from utils.assertions import assert_that
 
 @pytest.mark.ui
 def test_missing_required_patient_id_expects_validation_feedback(admission_flow) -> None:
+    """Verify the form blocks submission when Patient ID is missing."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -29,6 +28,7 @@ def test_missing_required_patient_id_expects_validation_feedback(admission_flow)
 
 @pytest.mark.ui
 def test_missing_required_device_id_expects_validation_feedback(admission_flow) -> None:
+    """Verify the form blocks submission when Device ID is missing."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -48,6 +48,7 @@ def test_missing_required_device_id_expects_validation_feedback(admission_flow) 
 
 @pytest.mark.ui
 def test_device_shorter_than_minimum_expects_validation_feedback(admission_flow) -> None:
+    """Verify the Device ID minimum-length validation using a too-short live input."""
     data = build_happy_path_admission(device_id="9")
 
     with allure.step("Login and open Patient Admission"):
@@ -73,6 +74,7 @@ def test_device_shorter_than_minimum_expects_validation_feedback(admission_flow)
     ],
 )
 def test_invalid_device_states_expect_distinct_feedback(admission_flow, device_id: str, expected_message: str) -> None:
+    """Verify that different invalid live device states map to different UI messages."""
     data = build_happy_path_admission(device_id=device_id)
 
     with allure.step("Login and open Patient Admission"):
@@ -97,6 +99,7 @@ def test_invalid_device_states_expect_distinct_feedback(admission_flow, device_i
 
 @pytest.mark.ui
 def test_invalid_first_name_expects_validation_feedback(admission_flow) -> None:
+    """Verify the first-name field rejects numeric input."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -118,6 +121,7 @@ def test_invalid_first_name_expects_validation_feedback(admission_flow) -> None:
 
 @pytest.mark.ui
 def test_invalid_last_name_expects_validation_feedback(admission_flow) -> None:
+    """Verify the last-name field rejects numeric input."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -146,6 +150,7 @@ def test_invalid_last_name_expects_validation_feedback(admission_flow) -> None:
     ],
 )
 def test_weight_boundaries_expect_validation_feedback(admission_flow, weight: str, expected_message: str) -> None:
+    """Verify the weight field rejects values outside the supported live range."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -172,6 +177,7 @@ def test_weight_boundaries_expect_validation_feedback(admission_flow, weight: st
     ],
 )
 def test_height_boundaries_expect_validation_feedback(admission_flow, height: str, expected_message: str) -> None:
+    """Verify the height field rejects values outside the supported live range."""
     data = build_happy_path_admission()
 
     with allure.step("Login and open Patient Admission"):
@@ -191,6 +197,7 @@ def test_height_boundaries_expect_validation_feedback(admission_flow, height: st
 
 @pytest.mark.ui
 def test_missing_physician_expects_validation_feedback(admission_flow) -> None:
+    """Verify the form requires a referring physician before submission."""
     data = PatientAdmissionData(
         patient_id=build_happy_path_admission().patient_id,
         device_id="676767",

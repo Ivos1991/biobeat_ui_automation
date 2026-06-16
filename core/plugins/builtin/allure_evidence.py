@@ -15,7 +15,9 @@ class AllureEvidencePlugin:
     description = "Captures framework evidence for failures and API interactions."
 
     def register(self, runtime) -> None:
+        """Register the Allure evidence callbacks against the framework hook manager."""
         def after_api_call(context: ApiCallContext) -> None:
+            """Attach API-call metadata and payloads after instrumented client requests."""
             payload = {
                 "client": context.client_name,
                 "method": context.method,
@@ -33,6 +35,7 @@ class AllureEvidencePlugin:
                 attach_text("api-response", json.dumps(context.response_payload, default=str))
 
         def on_failure(context: FailureContext) -> None:
+            """Attach core failure diagnostics when a test call phase fails."""
             attach_text("failed-test", context.test.nodeid)
             if context.error is not None:
                 attach_text("failure-exception", repr(context.error))

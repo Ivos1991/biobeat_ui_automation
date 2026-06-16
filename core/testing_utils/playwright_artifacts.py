@@ -7,6 +7,7 @@ from core.reporting import attach_file, attach_text
 
 
 def attachment_type_for_path(path: Path):
+    """Map a file suffix to the matching Allure attachment type."""
     suffix = path.suffix.lower()
     if suffix == ".png":
         return allure.attachment_type.PNG
@@ -18,6 +19,7 @@ def attachment_type_for_path(path: Path):
 
 
 def attach_artifacts_from_output_path(output_path: str | Path) -> None:
+    """Attach supported Playwright artifacts from the pytest-playwright output folder."""
     artifact_dir = Path(output_path)
     if not artifact_dir.exists():
         return
@@ -32,6 +34,7 @@ def attach_artifacts_from_output_path(output_path: str | Path) -> None:
 
 
 def attach_page_screenshot(page: Page, screenshot_path: Path, *, test_failed: bool) -> None:
+    """Capture a full-page screenshot and attach it together with the current page URL."""
     if page.is_closed():
         return
 
@@ -43,5 +46,6 @@ def attach_page_screenshot(page: Page, screenshot_path: Path, *, test_failed: bo
 
 
 def attach_log_file(log_path: Path) -> None:
+    """Attach the framework log file when it exists for the current run."""
     if log_path.exists():
         attach_file(log_path.name, log_path, allure.attachment_type.TEXT)

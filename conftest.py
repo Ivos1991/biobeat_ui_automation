@@ -35,6 +35,7 @@ ALLURE_REPORTED_FIXTURES = {"attach_ui_artifacts"}
 
 
 def _runtime(config: pytest.Config) -> FrameworkRuntime:
+    """Build the framework runtime once and cache it on the pytest config object."""
     runtime = getattr(config, "_framework_runtime", None)
     if runtime is None:
         runtime = build_runtime()
@@ -43,6 +44,7 @@ def _runtime(config: pytest.Config) -> FrameworkRuntime:
 
 
 def _apply_playwright_defaults(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Align pytest-playwright defaults with the project settings and evidence mode."""
     runtime = _runtime(config)
     settings = runtime.settings
     collect_all_requested = any(item.get_closest_marker("collect_all_evidence") for item in items)
@@ -80,11 +82,13 @@ def _apply_playwright_defaults(config: pytest.Config, items: list[pytest.Item]) 
 
 
 def _reduce_allure_fixture_noise(config: pytest.Config) -> None:
+    """Patch the Allure listener so fixture output stays focused on the artifacts fixture."""
     listener = config.pluginmanager.get_plugin("allure_listener")
     if listener is None or getattr(listener, "_biobeat_fixture_filter_installed", False):
         return
 
     def filtered_fixture_setup(self, fixturedef, request):
+        """Keep detailed Allure fixture reporting only for explicitly whitelisted fixtures."""
         fixture_name = getattr(fixturedef.func, "__allure_display_name__", fixturedef.argname)
         if fixturedef.argname not in ALLURE_REPORTED_FIXTURES:
             yield
@@ -118,6 +122,7 @@ def _reduce_allure_fixture_noise(config: pytest.Config) -> None:
             finalizers[index] = allure_commons.fixture(finalizer, parent_uuid=container_uuid, name=name)
 
     def filtered_fixture_post_finalizer(self, fixturedef):
+        """Close only the filtered Allure fixture groups after teardown finishes."""
         yield
         if fixturedef.argname not in ALLURE_REPORTED_FIXTURES:
             return
@@ -139,12 +144,14 @@ def _reduce_allure_fixture_noise(config: pytest.Config) -> None:
 
 
 def pytest_configure(config: pytest.Config) -> None:
+    """Initialize the shared runtime and patch the Allure listener during pytest startup."""
     _runtime(config)
     _reduce_allure_fixture_noise(config)
 
 
 @pytest.fixture(scope="session", autouse=True)
 def write_environment_metadata(settings: Settings) -> None:
+    """Write environment metadata so each Allure run records the active runtime settings."""
     write_allure_environment(
         settings.allure_results_dir,
         {
@@ -158,16 +165,19 @@ def write_environment_metadata(settings: Settings) -> None:
 
 
 def pytest_collection_modifyitems(config: pytest.Config, items: list[pytest.Item]) -> None:
+    """Apply Playwright CLI defaults after collection once markers are available."""
     _apply_playwright_defaults(config, items)
 
 
 def pytest_sessionfinish(session: pytest.Session, exitstatus: int) -> None:
+    """Publish the final session status to the framework hook system."""
     runtime = _runtime(session.config)
     runtime.session_context.metadata["exitstatus"] = exitstatus
     runtime.hooks.emit("after_session", runtime.session_context)
 
 
 def pytest_runtest_setup(item: pytest.Item) -> None:
+    """Create and register a per-test framework context before setup begins."""
     runtime = _runtime(item.config)
     context = TestContext(test_id=TestId(item.nodeid), nodeid=item.nodeid, name=item.name, phase="setup")
     item._framework_test_context = context
@@ -177,6 +187,7 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
 def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[Any]):
+    """Capture pytest reports so teardown and failure hooks can inspect the test outcome."""
     outcome = yield
     report = outcome.get_result()
     setattr(item, f"rep_{report.when}", report)
@@ -200,21 +211,25 @@ def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[Any]):
 
 @pytest.fixture(scope="session")
 def framework(pytestconfig: pytest.Config) -> FrameworkRuntime:
+    """Expose the cached framework runtime to fixtures that need shared services."""
     return _runtime(pytestconfig)
 
 
 @pytest.fixture(scope="session")
 def settings(framework: FrameworkRuntime) -> Settings:
+    """Expose the typed settings object extracted from the framework runtime."""
     return framework.settings
 
 
 @pytest.fixture(scope="session")
 def page_factory(framework: FrameworkRuntime, settings: Settings) -> PageObjectFactory:
+    """Expose the shared page-object factory used by flows and tests."""
     return PageObjectFactory(settings=settings, runtime=framework)
 
 
 @pytest.fixture
 def browser_context_args(browser_context_args, settings: Settings):
+    """Inject project-specific browser context defaults into pytest-playwright."""
     return {
         **browser_context_args,
         "ignore_https_errors": settings.browser.ignore_https_errors,
@@ -223,6 +238,7 @@ def browser_context_args(browser_context_args, settings: Settings):
 
 @pytest.fixture(scope="session")
 def browser_type_launch_args(browser_type_launch_args, settings: Settings):
+    """Inject project-specific browser launch arguments into pytest-playwright."""
     return {
         **browser_type_launch_args,
         "headless": settings.headless,
@@ -232,12 +248,14 @@ def browser_type_launch_args(browser_type_launch_args, settings: Settings):
 
 @pytest.fixture(autouse=True)
 def register_playwright_output_path(request, output_path):
+    """Store the pytest-playwright output folder on the node for later artifact attachment."""
     request.node.playwright_output_path = output_path
     return output_path
 
 
 @pytest.fixture(autouse=True)
 def attach_ui_artifacts(request, settings: Settings):
+    """Attach screenshots, traces, videos, and logs after the test when policy allows it."""
     yield
 
     report = getattr(request.node, "rep_call", None)

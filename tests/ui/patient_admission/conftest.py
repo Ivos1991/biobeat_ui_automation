@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 import pytest
 
@@ -10,6 +8,7 @@ from utils.assertions import assert_that
 
 @pytest.fixture
 def managed_admission(page, page_factory):
+    """Create unique admission data and tear down any created session after the test finishes."""
     context = build_managed_admission()
     yield context
 

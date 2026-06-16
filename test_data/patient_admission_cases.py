@@ -1,11 +1,10 @@
-from __future__ import annotations
-
 from dataclasses import dataclass
 from uuid import uuid4
 
 
 @dataclass(slots=True)
 class PatientAdmissionData:
+    """Structured admission payload shared by happy-path and validation tests."""
     patient_id: str
     device_id: str
     gender_at_birth: str | None = None
@@ -20,10 +19,12 @@ class PatientAdmissionData:
 
 
 def build_unique_patient_id(prefix: str = "AUTO") -> str:
+    """Generate a unique patient ID so live runs do not collide with prior sessions."""
     return f"{prefix}{uuid4().hex[:12].upper()}"
 
 
 def build_happy_path_admission(device_id: str = "676767") -> PatientAdmissionData:
+    """Build the default valid admission payload used by most live-flow tests."""
     return PatientAdmissionData(
         patient_id=build_unique_patient_id(),
         device_id=device_id,

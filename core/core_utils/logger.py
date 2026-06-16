@@ -6,6 +6,7 @@ DATE_FORMAT = "%Y-%m-%d %H:%M:%S"
 
 
 def configure_logging(log_dir: Path, level: str = "INFO") -> None:
+    """Configure root logging once for both console output and the framework log file."""
     log_dir.mkdir(parents=True, exist_ok=True)
     log_file = log_dir / "framework.log"
 
@@ -29,4 +30,5 @@ def configure_logging(log_dir: Path, level: str = "INFO") -> None:
 
 
 def get_logger(name: str) -> logging.Logger:
+    """Return a named logger that participates in the shared framework logging setup."""
     return logging.getLogger(name)

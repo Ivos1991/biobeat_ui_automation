@@ -1,5 +1,3 @@
-from __future__ import annotations
-
 import allure
 import pytest
 
@@ -8,10 +6,8 @@ from utils.assertions import assert_that
 
 
 @pytest.mark.ui
-def test_cleanup_expects_session_removal_to_require_patient_id_and_be_idempotent(
-    admission_flow,
-    managed_admission,
-) -> None:
+def test_cleanup_expects_session_removal_to_require_patient_id_and_be_idempotent(admission_flow, managed_admission) -> None:
+    """Verify live removal rules and prove teardown cleanup stays safe on repeated attempts."""
     with allure.step("Create a real admission that can later be removed"):
         admission_flow.start_patient_admission()
         admission_flow.submit_admission(managed_admission.data)
