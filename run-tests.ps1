@@ -37,7 +37,7 @@ if ($PytestMarker -ne "") {
 
 $allureCli = Get-Command allure.cmd -ErrorAction SilentlyContinue
 if ($null -ne $allureCli) {
-    & $allureCli.Source generate $allureResultsDir --clean --single-file -o $allureReportDir
+    & $allureCli.Source generate $allureResultsDir --clean -o $allureReportDir
     Write-Host "Allure report generated at $allureReportDir"
     Write-Host "Open it with: & `"$($allureCli.Source)`" open $allureReportDir"
 

@@ -143,7 +143,7 @@ Run through the helper script:
 Generate a local report after a run:
 
 ```powershell
-allure generate artifacts\allure-results --clean --single-file -o artifacts\allure-report
+allure generate artifacts\allure-results --clean -o artifacts\allure-report
 allure open artifacts\allure-report
 ```
 
@@ -165,7 +165,7 @@ The workflow:
 - installs Python dependencies
 - installs Playwright Chromium
 - runs `python -m pytest tests/ui -m ui -q --alluredir artifacts/allure-results`
-- generates a single-file Allure HTML report
+- generates a multi-file Allure HTML report
 - uploads Allure results
 - uploads the Allure HTML report
 - uploads Playwright screenshots, videos, traces, and logs
