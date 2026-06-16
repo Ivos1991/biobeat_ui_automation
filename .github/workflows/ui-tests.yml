@@ -36,6 +36,7 @@ jobs:
   ui-tests:
     runs-on: ubuntu-latest
     outputs:
+      has_credentials: ${{ steps.detect_credentials.outputs.has_credentials }}
       has_allure_results: ${{ steps.detect_allure_results.outputs.has_results }}
     env:
       WEB_BASE_URL: ${{ vars.WEB_BASE_URL || 'https://bpm-demo.eu.bio-beat.cloud' }}
@@ -63,7 +64,18 @@ jobs:
       - name: Install Playwright browser
         run: python -m playwright install --with-deps chromium
 
+      - name: Detect BioBeat credentials
+        id: detect_credentials
+        shell: bash
+        run: |
+          if [ -n "${BIOBEAT_USERNAME}" ] && [ -n "${BIOBEAT_PASSWORD}" ]; then
+            echo "has_credentials=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "has_credentials=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - name: Run pytest
+        if: steps.detect_credentials.outputs.has_credentials == 'true'
         shell: bash
         run: |
           marker_expression="ui"
@@ -144,7 +156,11 @@ jobs:
             echo "- Marker selection: \`${{ github.event.inputs.marker_selection || 'all_markers' }}\`"
             echo "- Custom marker: \`${{ github.event.inputs.custom_marker || 'n/a' }}\`"
             echo "- Evidence mode: \`${{ github.event.inputs.evidence_mode || vars.BROWSER_EVIDENCE_MODE || 'failure_only' }}\`"
+            echo "- Credentials configured: \`${{ needs.ui-tests.outputs.has_credentials }}\`"
             echo "- No Allure HTML report was generated in this workflow run."
+            if [ "${{ needs.ui-tests.outputs.has_credentials }}" != "true" ]; then
+              echo "- UI tests were skipped because BIOBEAT_USERNAME/BIOBEAT_PASSWORD are not configured in repository secrets."
+            fi
           } >> "$GITHUB_STEP_SUMMARY"
 
   deploy-report:
