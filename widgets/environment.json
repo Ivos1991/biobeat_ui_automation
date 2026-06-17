@@ -1,0 +1,1 @@
+[{"values":["https://bpm-demo.eu.bio-beat.cloud"],"name":"base_url"},{"values":["chromium"],"name":"browser"},{"values":["full"],"name":"browser_evidence_mode"},{"values":["local"],"name":"environment"},{"values":["true"],"name":"headless"}]

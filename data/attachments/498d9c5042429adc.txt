@@ -1,0 +1,37 @@
+2026-06-17 09:44:00 INFO [framework] Activated plugin 'session_logger'
+2026-06-17 09:44:00 INFO [framework] Activated plugin 'allure_evidence'
+2026-06-17 09:44:00 INFO [framework] Session 46b53b3d-b7c8-482c-a37c-11f366e85939 started in local
+2026-06-17 09:44:00 INFO [framework] Starting test tests/ui/patient_admission/test_admission_cleanup.py::test_cleanup_expects_session_removal_to_require_patient_id_and_be_idempotent[chromium]
+2026-06-17 09:44:51 INFO [framework] Finished test tests/ui/patient_admission/test_admission_cleanup.py::test_cleanup_expects_session_removal_to_require_patient_id_and_be_idempotent[chromium] with outcome=passed
+2026-06-17 09:44:58 INFO [framework] Starting test tests/ui/patient_admission/test_admission_happy_path.py::test_admission_happy_path_expects_pending_session_created_in_session_management[chromium]
+2026-06-17 09:45:22 INFO [framework] Finished test tests/ui/patient_admission/test_admission_happy_path.py::test_admission_happy_path_expects_pending_session_created_in_session_management[chromium] with outcome=passed
+2026-06-17 09:45:39 INFO [framework] Starting test tests/ui/patient_admission/test_admission_happy_path.py::test_admission_with_valid_date_of_birth_expects_pending_session_created[chromium]
+2026-06-17 09:46:01 INFO [framework] Finished test tests/ui/patient_admission/test_admission_happy_path.py::test_admission_with_valid_date_of_birth_expects_pending_session_created[chromium] with outcome=passed
+2026-06-17 09:46:16 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_required_patient_id_expects_validation_feedback[chromium]
+2026-06-17 09:46:28 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_required_patient_id_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:46:32 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_required_device_id_expects_validation_feedback[chromium]
+2026-06-17 09:46:44 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_required_device_id_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:46:48 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_shorter_than_minimum_expects_validation_feedback[chromium]
+2026-06-17 09:47:00 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_shorter_than_minimum_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:47:04 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_already_assigned_expects_in_use_feedback[chromium]
+2026-06-17 09:47:31 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_already_assigned_expects_in_use_feedback[chromium] with outcome=passed
+2026-06-17 09:47:47 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_not_activated_expects_distinct_feedback[chromium]
+2026-06-17 09:48:03 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_not_activated_expects_distinct_feedback[chromium] with outcome=passed
+2026-06-17 09:48:07 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_first_name_expects_validation_feedback[chromium]
+2026-06-17 09:48:20 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_first_name_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:48:24 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_last_name_expects_validation_feedback[chromium]
+2026-06-17 09:48:36 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_last_name_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:48:39 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_weight_boundaries_expect_validation_feedback[chromium-0-Weight must be between 10-250 kg]
+2026-06-17 09:48:52 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_weight_boundaries_expect_validation_feedback[chromium-0-Weight must be between 10-250 kg] with outcome=passed
+2026-06-17 09:48:55 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_height_boundaries_expect_validation_feedback[chromium-0-Height must be between 30-242 cm]
+2026-06-17 09:49:08 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_height_boundaries_expect_validation_feedback[chromium-0-Height must be between 30-242 cm] with outcome=passed
+2026-06-17 09:49:11 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_physician_expects_validation_feedback[chromium]
+2026-06-17 09:49:23 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_physician_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:49:27 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_patient_id_characters_expect_validation_feedback[chromium]
+2026-06-17 09:49:39 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_patient_id_characters_expect_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:49:42 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_future_date_of_birth_expects_validation_feedback[chromium]
+2026-06-17 09:49:54 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_future_date_of_birth_expects_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:49:58 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_additional_notes_invalid_characters_expect_validation_feedback[chromium]
+2026-06-17 09:50:10 INFO [framework] Finished test tests/ui/patient_admission/test_admission_negative_validation.py::test_additional_notes_invalid_characters_expect_validation_feedback[chromium] with outcome=passed
+2026-06-17 09:50:14 INFO [framework] Starting test tests/ui/patient_admission/test_admission_popup_behavior.py::test_confirmation_popup_enablement_expects_exact_patient_id_before_confirm[chromium]
+2026-06-17 09:50:27 INFO [framework] Finished test tests/ui/patient_admission/test_admission_popup_behavior.py::test_confirmation_popup_enablement_expects_exact_patient_id_before_confirm[chromium] with outcome=passed

@@ -1,0 +1,1 @@
+2026-06-17 09:50:30 INFO [framework] Starting test tests/ui/patient_admission/test_admission_popup_behavior.py::test_exit_popup_behavior_expects_cancel_to_keep_form_and_leave_to_exit[chromium]

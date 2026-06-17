@@ -1,0 +1,1 @@
+2026-06-17 09:50:47 INFO [framework] Starting test tests/ui/patient_admission/test_admission_popup_behavior.py::test_female_gender_selection_expects_confirmation_popup_to_open[chromium]

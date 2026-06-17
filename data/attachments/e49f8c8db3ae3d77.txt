@@ -1,0 +1,5 @@
+2026-06-17 09:44:00 INFO [framework] Activated plugin 'session_logger'
+2026-06-17 09:44:00 INFO [framework] Activated plugin 'allure_evidence'
+2026-06-17 09:44:00 INFO [framework] Session 46b53b3d-b7c8-482c-a37c-11f366e85939 started in local
+2026-06-17 09:44:00 INFO [framework] Starting test tests/ui/patient_admission/test_admission_cleanup.py::test_cleanup_expects_session_removal_to_require_patient_id_and_be_idempotent[chromium]
+2026-06-17 09:44:51 INFO [framework] Finished test tests/ui/patient_admission/test_admission_cleanup.py::test_cleanup_expects_session_removal_to_require_patient_id_and_be_idempotent[chromium] with outcome=passed

@@ -1,0 +1,1 @@
+2026-06-17 09:44:58 INFO [framework] Starting test tests/ui/patient_admission/test_admission_happy_path.py::test_admission_happy_path_expects_pending_session_created_in_session_management[chromium]

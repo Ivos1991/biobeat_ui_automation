@@ -1,0 +1,1 @@
+2026-06-17 09:51:02 INFO [framework] Starting test tests/ui/test_login.py::test_login_expects_user_can_authenticate_and_reach_session_management[chromium]

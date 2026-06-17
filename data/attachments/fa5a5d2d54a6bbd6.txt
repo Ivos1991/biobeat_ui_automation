@@ -1,0 +1,1 @@
+2026-06-17 09:47:04 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_already_assigned_expects_in_use_feedback[chromium]

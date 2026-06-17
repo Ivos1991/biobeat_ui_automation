@@ -1,0 +1,1 @@
+INFO     framework:session_logging.py:25 Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_shorter_than_minimum_expects_validation_feedback[chromium]

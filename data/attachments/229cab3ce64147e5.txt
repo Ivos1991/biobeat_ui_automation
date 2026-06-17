@@ -1,0 +1,1 @@
+2026-06-17 09:47:47 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_device_not_activated_expects_distinct_feedback[chromium]

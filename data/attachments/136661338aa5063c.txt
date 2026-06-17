@@ -1,0 +1,1 @@
+2026-06-17 09:50:14 INFO [framework] Starting test tests/ui/patient_admission/test_admission_popup_behavior.py::test_confirmation_popup_enablement_expects_exact_patient_id_before_confirm[chromium]

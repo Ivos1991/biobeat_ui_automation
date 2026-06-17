@@ -1,0 +1,1 @@
+2026-06-17 09:46:16 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_required_patient_id_expects_validation_feedback[chromium]

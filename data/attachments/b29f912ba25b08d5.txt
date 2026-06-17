@@ -1,0 +1,1 @@
+2026-06-17 09:48:39 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_weight_boundaries_expect_validation_feedback[chromium-0-Weight must be between 10-250 kg]

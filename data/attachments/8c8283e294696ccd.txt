@@ -1,0 +1,1 @@
+2026-06-17 09:51:14 INFO [framework] Starting test tests/ui/test_navigation.py::test_navigation_to_patient_admission_expects_form_to_load[chromium]

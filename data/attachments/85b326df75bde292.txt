@@ -1,0 +1,1 @@
+INFO     framework:session_logging.py:25 Starting test tests/ui/test_navigation.py::test_navigation_to_patient_admission_expects_form_to_load[chromium]

@@ -1,0 +1,1 @@
+2026-06-17 09:49:27 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_invalid_patient_id_characters_expect_validation_feedback[chromium]

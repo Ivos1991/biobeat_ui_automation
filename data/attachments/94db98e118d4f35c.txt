@@ -1,0 +1,1 @@
+2026-06-17 09:49:11 INFO [framework] Starting test tests/ui/patient_admission/test_admission_negative_validation.py::test_missing_physician_expects_validation_feedback[chromium]

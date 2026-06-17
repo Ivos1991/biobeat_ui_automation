@@ -1,0 +1,1 @@
+INFO     framework:session_logging.py:25 Starting test tests/ui/test_navigation.py::test_navigation_to_patient_lookup_expects_search_and_table_to_load[chromium]
