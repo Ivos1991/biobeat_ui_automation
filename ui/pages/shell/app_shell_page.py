@@ -1,3 +1,4 @@
+import allure
 from playwright.sync_api import Locator
 
 from ui.pages.base_page import BasePage
@@ -21,26 +22,30 @@ class AppShellPage(BasePage):
 
     def wait_until_ready(self) -> None:
         """Wait for the authenticated shell to be usable after login or route changes."""
-        self.session_management_button.wait_for(
-            state="visible",
-            timeout=self.settings.timeouts.navigation_timeout_ms * 2,
-        )
+        with allure.step("Wait for the authenticated shell navigation to become ready"):
+            self.session_management_button.wait_for(
+                state="visible",
+                timeout=self.settings.timeouts.navigation_timeout_ms * 2,
+            )
         self.wait_for_loading_to_finish()
 
     def open_session_management(self) -> None:
         """Navigate through the shell to Session Management."""
-        self.session_management_button.click()
+        with allure.step("Click the Session Management navigation button"):
+            self.session_management_button.click()
         self.wait_for_path("/session-management")
         self.wait_for_loading_to_finish()
 
     def open_patient_admission(self) -> None:
         """Navigate through the shell to Patient Admission."""
-        self.patient_admission_button.click()
+        with allure.step("Click the Patient Admission navigation button"):
+            self.patient_admission_button.click()
         self.wait_for_path("/patient-admission")
         self.wait_for_loading_to_finish()
 
     def open_patient_lookup(self) -> None:
         """Navigate through the shell to Patient Lookup."""
-        self.patient_lookup_button.click()
+        with allure.step("Click the Patient Lookup navigation button"):
+            self.patient_lookup_button.click()
         self.wait_for_path("/patient-lookup")
         self.wait_for_loading_to_finish()

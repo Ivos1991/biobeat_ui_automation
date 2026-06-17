@@ -35,12 +35,14 @@ def wait_for_session_to_disappear(
     """Refresh and re-search until a removed session disappears from the live table."""
     # Session Management updates asynchronously after removals, so refresh and re-search
     # until the row is gone or we exhaust a small bounded retry window.
-    for _ in range(attempts):
-        session_page.click_refresh()
-        session_page.search_session(patient_id)
-        if not session_page.has_session(patient_id):
-            return True
-        session_page.wait_for_loading_to_finish()
+    with allure.step(f"Wait for session '{patient_id}' to disappear from Session Management"):
+        for attempt_index in range(1, attempts + 1):
+            with allure.step(f"Removal verification attempt {attempt_index} of {attempts}"):
+                session_page.click_refresh()
+                session_page.search_session(patient_id)
+                if not session_page.has_session(patient_id):
+                    return True
+                session_page.wait_for_loading_to_finish()
     return False
 
 

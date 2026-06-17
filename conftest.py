@@ -31,7 +31,7 @@ from core.testing_utils.playwright_artifacts import (
 )
 from ui.page_factory import PageObjectFactory
 
-ALLURE_REPORTED_FIXTURES = {"attach_ui_artifacts"}
+ALLURE_REPORTED_FIXTURES = {"attach_ui_artifacts", "cleanup_generated_patient_ids"}
 
 
 def _runtime(config: pytest.Config) -> FrameworkRuntime:
@@ -115,12 +115,6 @@ def _reduce_allure_fixture_noise(config: pytest.Config) -> None:
             status=get_outcome_status(outcome),
             statusDetails=get_outcome_status_details(outcome),
         )
-
-        finalizers = getattr(fixturedef, "_finalizers", [])
-        for index, finalizer in enumerate(finalizers):
-            finalizer_name = getattr(finalizer, "__name__", index)
-            name = f"{fixture_name}::{finalizer_name}"
-            finalizers[index] = allure_commons.fixture(finalizer, parent_uuid=container_uuid, name=name)
 
     def filtered_fixture_post_finalizer(self, fixturedef):
         """Close only the filtered Allure fixture groups after teardown finishes."""
