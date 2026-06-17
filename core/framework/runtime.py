@@ -6,7 +6,6 @@ from typing import Any
 
 from config.settings import Settings
 from core.core_utils.logger import configure_logging, get_logger
-from core.framework.container import ServiceContainer
 from core.framework.hooks import HookManager, SessionContext
 from core.framework.plugins import PluginManager
 
@@ -16,7 +15,6 @@ class FrameworkRuntime:
     """Top-level runtime object shared across pytest fixtures and hooks."""
 
     settings: Settings
-    container: ServiceContainer
     hooks: HookManager
     plugins: PluginManager
     logger: Any
@@ -32,24 +30,16 @@ def build_runtime(settings: Settings | None = None) -> FrameworkRuntime:
     logger = get_logger("framework")
     hooks = HookManager(logger)
     plugins = PluginManager(logger)
-    container = ServiceContainer()
     # The session context carries run-level metadata across hooks and plugins.
     session_context = SessionContext(session_id=str(uuid.uuid4()), settings=resolved_settings)
 
     runtime = FrameworkRuntime(
         settings=resolved_settings,
-        container=container,
         hooks=hooks,
         plugins=plugins,
         logger=logger,
         session_context=session_context,
     )
-
-    # Register the core shared services so fixtures and plugins can resolve them consistently.
-    container.register_singleton(FrameworkRuntime, instance=runtime)
-    container.register_singleton(Settings, instance=resolved_settings)
-    container.register_singleton(HookManager, instance=hooks)
-    container.register_singleton(PluginManager, instance=plugins)
 
     # Plugin activation can register lifecycle hooks before the test session starts.
     plugins.activate(runtime, resolved_settings.plugins.enabled)

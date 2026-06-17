@@ -1,3 +1,4 @@
+import allure
 from playwright.sync_api import Locator
 
 from ui.pages.base_page import BasePage
@@ -21,14 +22,17 @@ class ExitPatientAdmissionPopup(BasePage):
 
     def wait_until_open(self) -> None:
         """Wait until the exit confirmation popup is visible."""
-        self.title.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
+        with allure.step("Wait for the exit confirmation popup to open"):
+            self.title.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
 
     def click_cancel(self) -> None:
         """Stay on the admission form and discard the popup only."""
-        self.cancel_button.click()
+        with allure.step("Click Cancel in the exit confirmation popup"):
+            self.cancel_button.click()
         self.wait_for_loading_to_finish()
 
     def click_leave(self) -> None:
         """Leave the dirty admission form and return to the previous screen."""
-        self.leave_button.click()
+        with allure.step("Click Leave in the exit confirmation popup"):
+            self.leave_button.click()
         self.wait_for_loading_to_finish()

@@ -1,3 +1,4 @@
+import allure
 from playwright.sync_api import Locator
 
 from ui.pages.base_page import BasePage
@@ -25,19 +26,26 @@ class RemoveSessionPopup(BasePage):
 
     def wait_until_open(self) -> None:
         """Wait until the remove-session popup is visible and ready for confirmation input."""
-        self.title.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
-        self.patient_id_confirmation_input.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
+        with allure.step("Wait for the Remove Session popup to open"):
+            self.title.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
+            self.patient_id_confirmation_input.wait_for(
+                state="visible",
+                timeout=self.settings.timeouts.expect_timeout_ms,
+            )
 
     def fill_patient_id_confirmation(self, patient_id: str) -> None:
         """Type the exact patient ID required by the live app to enable removal."""
-        self.patient_id_confirmation_input.fill(patient_id)
+        with allure.step(f"Fill the Remove Session confirmation input with '{patient_id}'"):
+            self.patient_id_confirmation_input.fill(patient_id)
 
     def click_cancel(self) -> None:
         """Close the popup without deleting the session."""
-        self.cancel_button.click()
+        with allure.step("Click Cancel in the Remove Session popup"):
+            self.cancel_button.click()
         self.wait_for_loading_to_finish()
 
     def click_remove(self) -> None:
         """Confirm deletion once the patient-ID safeguard has been satisfied."""
-        self.remove_button.click()
-        self.wait_for_loading_to_finish(settle_ms=1200)
+        with allure.step("Click Remove in the Remove Session popup"):
+            self.remove_button.click()
+        self.wait_for_loading_to_finish()

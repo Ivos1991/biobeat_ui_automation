@@ -1,3 +1,4 @@
+import allure
 from playwright.sync_api import Locator
 
 from ui.pages.base_page import BasePage
@@ -25,19 +26,23 @@ class PatientAdmissionConfirmationPopup(BasePage):
 
     def wait_until_open(self) -> None:
         """Wait until the confirmation popup is visible and ready for input."""
-        self.title.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
-        self.patient_id_input.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
+        with allure.step("Wait for the admission confirmation popup to open"):
+            self.title.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
+            self.patient_id_input.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
 
     def fill_patient_id(self, value: str) -> None:
         """Type the same patient ID used in the main form to unlock final confirmation."""
-        self.patient_id_input.fill(value)
+        with allure.step(f"Fill the confirmation popup Patient ID with '{value}'"):
+            self.patient_id_input.fill(value)
 
     def click_cancel(self) -> None:
         """Dismiss the popup without completing the admission."""
-        self.cancel_button.click()
+        with allure.step("Click Cancel in the admission confirmation popup"):
+            self.cancel_button.click()
         self.wait_for_loading_to_finish()
 
     def click_confirm(self) -> None:
         """Finalize the admission from the popup after the patient ID is confirmed."""
-        self.confirm_button.click()
-        self.wait_for_loading_to_finish(settle_ms=1000)
+        with allure.step("Click Confirm in the admission confirmation popup"):
+            self.confirm_button.click()
+        self.wait_for_loading_to_finish()

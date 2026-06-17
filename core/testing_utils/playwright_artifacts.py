@@ -1,4 +1,5 @@
 from pathlib import Path
+from typing import Any
 
 import allure
 from playwright.sync_api import Page
@@ -6,7 +7,7 @@ from playwright.sync_api import Page
 from core.reporting import attach_file, attach_text
 
 
-def attachment_type_for_path(path: Path):
+def attachment_type_for_path(path: Path) -> Any:
     """Map a file suffix to the matching Allure attachment type."""
     suffix = path.suffix.lower()
     if suffix == ".png":

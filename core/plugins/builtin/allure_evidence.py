@@ -4,6 +4,7 @@ import json
 
 from core.framework.hooks import ApiCallContext, FailureContext
 from core.framework.plugins import plugin
+from core.framework.runtime import FrameworkRuntime
 from core.reporting import attach_json, attach_text
 
 
@@ -14,7 +15,7 @@ class AllureEvidencePlugin:
     name = "allure_evidence"
     description = "Captures framework evidence for failures and API interactions."
 
-    def register(self, runtime) -> None:
+    def register(self, runtime: FrameworkRuntime) -> None:
         """Register the Allure evidence callbacks against the framework hook manager."""
         def after_api_call(context: ApiCallContext) -> None:
             """Attach API-call metadata and payloads after instrumented client requests."""
