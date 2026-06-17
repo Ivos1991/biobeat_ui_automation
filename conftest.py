@@ -4,15 +4,15 @@ from __future__ import annotations
 
 from pathlib import Path
 from types import MethodType
-from typing import Any
+from typing import Any, cast
 
 import allure
 import allure_commons
 import pytest
-from playwright.sync_api import Page
 from allure_commons.model2 import TestBeforeResult, TestResultContainer
 from allure_commons.utils import now, uuid4
 from allure_pytest.utils import get_outcome_status, get_outcome_status_details
+from playwright.sync_api import Page
 
 from config.settings import Settings
 from core.framework.hooks import FailureContext, TestContext
@@ -36,10 +36,11 @@ ALLURE_REPORTED_FIXTURES = {"attach_ui_artifacts"}
 
 def _runtime(config: pytest.Config) -> FrameworkRuntime:
     """Build the framework runtime once and cache it on the pytest config object."""
-    runtime = getattr(config, "_framework_runtime", None)
+    config_as_any = cast(Any, config)
+    runtime = getattr(config_as_any, "_framework_runtime", None)
     if runtime is None:
         runtime = build_runtime()
-        config._framework_runtime = runtime
+        config_as_any._framework_runtime = runtime
     return runtime
 
 
@@ -180,13 +181,13 @@ def pytest_runtest_setup(item: pytest.Item) -> None:
     """Create and register a per-test framework context before setup begins."""
     runtime = _runtime(item.config)
     context = TestContext(test_id=TestId(item.nodeid), nodeid=item.nodeid, name=item.name, phase="setup")
-    item._framework_test_context = context
+    cast(Any, item)._framework_test_context = context
     runtime.session_context.metadata["current_test"] = context
     runtime.hooks.emit("before_test", context)
 
 
 @pytest.hookimpl(hookwrapper=True, tryfirst=True)
-def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[Any]):
+def pytest_runtest_makereport(item: pytest.Item, call: pytest.CallInfo[Any]) -> Any:
     """Capture pytest reports so teardown and failure hooks can inspect the test outcome."""
     outcome = yield
     report = outcome.get_result()
@@ -228,7 +229,7 @@ def page_factory(framework: FrameworkRuntime, settings: Settings) -> PageObjectF
 
 
 @pytest.fixture
-def browser_context_args(browser_context_args, settings: Settings):
+def browser_context_args(browser_context_args: dict[str, object], settings: Settings) -> dict[str, object]:
     """Inject project-specific browser context defaults into pytest-playwright."""
     return {
         **browser_context_args,
@@ -237,7 +238,10 @@ def browser_context_args(browser_context_args, settings: Settings):
 
 
 @pytest.fixture(scope="session")
-def browser_type_launch_args(browser_type_launch_args, settings: Settings):
+def browser_type_launch_args(
+    browser_type_launch_args: dict[str, object],
+    settings: Settings,
+) -> dict[str, object]:
     """Inject project-specific browser launch arguments into pytest-playwright."""
     return {
         **browser_type_launch_args,
@@ -247,14 +251,14 @@ def browser_type_launch_args(browser_type_launch_args, settings: Settings):
 
 
 @pytest.fixture(autouse=True)
-def register_playwright_output_path(request, output_path):
+def register_playwright_output_path(request: pytest.FixtureRequest, output_path: str) -> str:
     """Store the pytest-playwright output folder on the node for later artifact attachment."""
     request.node.playwright_output_path = output_path
     return output_path
 
 
 @pytest.fixture(autouse=True)
-def attach_ui_artifacts(request, settings: Settings):
+def attach_ui_artifacts(request: pytest.FixtureRequest, settings: Settings) -> Any:
     """Attach screenshots, traces, videos, and logs after the test when policy allows it."""
     yield
 

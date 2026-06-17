@@ -1,4 +1,4 @@
-from playwright.sync_api import Locator
+from playwright.sync_api import Locator, expect
 
 from ui.pages.base_page import BasePage
 from ui.pages.session_management.remove_session_popup import RemoveSessionPopup
@@ -45,13 +45,15 @@ class SessionManagementPage(BasePage):
     def search_session(self, search_value: str) -> None:
         """Filter the live session table by patient ID or other searchable values."""
         self.search_session_input.fill(search_value)
-        self.wait_for_loading_to_finish(settle_ms=1000)
-        self.page.wait_for_timeout(1000)
+        expect(self.search_session_input).to_have_value(search_value, timeout=self.settings.timeouts.expect_timeout_ms)
+        self.wait_for_loading_to_finish()
+        self.sessions_table.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
 
     def click_refresh(self) -> None:
         """Trigger a table refresh and wait for the async reload to settle."""
         self.refresh_button.click()
-        self.wait_for_loading_to_finish(settle_ms=1000)
+        self.wait_for_loading_to_finish()
+        self.refresh_button.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
 
     def find_row_by_patient_id(self, patient_id: str) -> Locator | None:
         """Return the first non-empty session row that contains the requested patient ID."""
@@ -79,10 +81,10 @@ class SessionManagementPage(BasePage):
         row = self.find_row_by_patient_id(patient_id)
         if row is None:
             return False
-        # The action trigger appears only after row hover in the live table.
+        action_button = row.locator("button").first
         row.hover()
-        self.page.wait_for_timeout(700)
-        row.locator("button").first.click()
+        action_button.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
+        action_button.click()
         return True
 
     def open_remove_session_popup(self, patient_id: str) -> RemoveSessionPopup | None:

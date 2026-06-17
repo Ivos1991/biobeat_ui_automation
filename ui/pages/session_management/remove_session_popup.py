@@ -40,4 +40,4 @@ class RemoveSessionPopup(BasePage):
     def click_remove(self) -> None:
         """Confirm deletion once the patient-ID safeguard has been satisfied."""
         self.remove_button.click()
-        self.wait_for_loading_to_finish(settle_ms=1200)
+        self.wait_for_loading_to_finish()

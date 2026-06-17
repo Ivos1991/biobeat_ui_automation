@@ -25,22 +25,22 @@ class AppShellPage(BasePage):
             state="visible",
             timeout=self.settings.timeouts.navigation_timeout_ms * 2,
         )
-        self.wait_for_loading_to_finish(settle_ms=1000)
+        self.wait_for_loading_to_finish()
 
     def open_session_management(self) -> None:
         """Navigate through the shell to Session Management."""
         self.session_management_button.click()
-        self.wait_for_url("**/session-management")
+        self.wait_for_path("/session-management")
         self.wait_for_loading_to_finish()
 
     def open_patient_admission(self) -> None:
         """Navigate through the shell to Patient Admission."""
         self.patient_admission_button.click()
-        self.wait_for_url("**/patient-admission")
+        self.wait_for_path("/patient-admission")
         self.wait_for_loading_to_finish()
 
     def open_patient_lookup(self) -> None:
         """Navigate through the shell to Patient Lookup."""
         self.patient_lookup_button.click()
-        self.wait_for_url("**/patient-lookup")
+        self.wait_for_path("/patient-lookup")
         self.wait_for_loading_to_finish()

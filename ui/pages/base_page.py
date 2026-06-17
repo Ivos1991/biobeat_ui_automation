@@ -44,20 +44,33 @@ class BasePage:
             )
         self.wait_for_loading_to_finish()
 
-    def wait_for_loading_to_finish(self, settle_ms: int = 400) -> None:
-        """Wait for the known BioBeat loader variants to disappear before continuing."""
-        self.page.wait_for_timeout(settle_ms)
-        for selector in self._LOADER_SELECTORS:
-            locator = self.page.locator(selector)
-            try:
-                if locator.count() > 0:
-                    locator.last.wait_for(
-                        state="hidden",
-                        timeout=self.settings.timeouts.navigation_timeout_ms,
-                    )
-            except Exception:
-                continue
+    def wait_for_loading_to_finish(self) -> None:
+        """Wait for the known BioBeat loader variants to stop being visible."""
+        try:
+            self.page.wait_for_function(
+                """
+                selectors => selectors.every(selector => {
+                    const elements = Array.from(document.querySelectorAll(selector));
+                    return elements.every(element => {
+                        const style = window.getComputedStyle(element);
+                        const rect = element.getBoundingClientRect();
+                        const hiddenByStyle = style.display === "none" || style.visibility === "hidden";
+                        const collapsed = rect.width === 0 && rect.height === 0;
+                        return hiddenByStyle || collapsed;
+                    });
+                })
+                """,
+                arg=list(self._LOADER_SELECTORS),
+                timeout=self.settings.timeouts.navigation_timeout_ms,
+            )
+        except Exception:
+            # Some transitions do not render a loader. In that case the current DOM is already stable enough.
+            return
 
-    def wait_for_url(self, url_glob: str) -> None:
-        """Block until navigation reaches the expected route pattern."""
-        self.page.wait_for_url(url_glob, timeout=self.settings.timeouts.navigation_timeout_ms * 2)
+    def wait_for_path(self, path_fragment: str) -> None:
+        """Block until the browser path contains the requested route fragment."""
+        self.page.wait_for_function(
+            "pathFragment => window.location.pathname.includes(pathFragment)",
+            arg=path_fragment,
+            timeout=self.settings.timeouts.navigation_timeout_ms * 2,
+        )

@@ -66,6 +66,14 @@ class PatientAdmissionPage(BasePage):
     def close_button(self) -> Locator:
         return self.page.locator("button:has(svg[data-testid='CloseIcon'])")
 
+    @property
+    def success_feedback(self) -> Locator:
+        return self.page.get_by_text("added successfully")
+
+    @property
+    def generic_form_error(self) -> Locator:
+        return self.page.get_by_text("Please correct form errors")
+
     def wait_until_ready(self) -> None:
         """Wait for the admission form and its primary required controls to become usable."""
         self.wait_for_loading_to_finish()
@@ -183,3 +191,22 @@ class PatientAdmissionPage(BasePage):
     def get_validation_message(self, message: str) -> Locator:
         """Return a locator for a concrete validation message asserted by negative tests."""
         return self.page.get_by_text(message)
+
+    def wait_for_submission_result(self) -> None:
+        """Wait for either success feedback or the form to remain on-screen with validation."""
+        self.page.wait_for_function(
+            """
+            () => {
+                const text = document.body.innerText || "";
+                return (
+                    window.location.pathname.includes("/session-management") ||
+                    text.includes("added successfully") ||
+                    text.includes("Please correct form errors") ||
+                    text.includes("Error admitting this patient") ||
+                    text.includes("Device is in use.") ||
+                    text.includes("Device is not activated or does not exist.")
+                );
+            }
+            """,
+            timeout=self.settings.timeouts.navigation_timeout_ms * 2,
+        )

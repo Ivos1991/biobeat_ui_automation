@@ -1,6 +1,9 @@
 import allure
 import pytest
+from playwright.sync_api import Page
 
+from config.settings import Settings
+from ui.page_factory import PageObjectFactory
 from ui.pages.auth.login_page import LoginPage
 from ui.pages.session_management.session_management_page import SessionManagementPage
 from ui.pages.shell.app_shell_page import AppShellPage
@@ -9,7 +12,11 @@ from utils.assertions import assert_that
 
 @pytest.mark.ui
 @pytest.mark.smoke
-def test_login_expects_user_can_authenticate_and_reach_session_management(page, page_factory, settings) -> None:
+def test_login_expects_user_can_authenticate_and_reach_session_management(
+    page: Page,
+    page_factory: PageObjectFactory,
+    settings: Settings,
+) -> None:
     """Verify that the configured BioBeat user can log in and land on Session Management."""
     login_page = page_factory.create(LoginPage, page)
     shell_page = page_factory.create(AppShellPage, page)

@@ -12,9 +12,9 @@ Verified live behavior used by the suite:
 - Session Management is the reliable source for admission verification.
 - Patient Lookup may lag behind newly created admissions.
 - Session removal requires the same Patient ID, not Device ID.
-- Verified device states:
-  - `676767`: working creation path
-  - `126875`: in use
+- Assignment-capable device availability is live-data dependent, so the suite uses the known-good assignment devices `989898` and `676767`.
+- Device reuse is validated deterministically by creating a live session first and then proving the same device returns `Device is in use.` when reassigned.
+- Verified invalid device state:
   - `676733`: not activated or does not exist
 
 ## Repository Layout
@@ -59,7 +59,7 @@ Verified live behavior used by the suite:
 - `config/`: typed runtime settings from environment variables.
 - `ui/pages/`: locator-first page objects containing locators, UI actions, and data reads only.
 - `flows/`: thin orchestration across page objects.
-- `tests/ui/`: scenario tests organized by login, navigation, happy path, validation, popup behavior, and cleanup.
+- `tests/ui/`: 24 scenario tests organized by login, navigation, happy path, validation, popup behavior, and cleanup.
 - `utils/assertions.py`: small assertion facade used consistently across tests and fixtures.
 
 ## Setup
@@ -137,6 +137,12 @@ Run the complete UI suite:
 ```powershell
 .venv\Scripts\python -m pytest tests\ui -m ui -q --alluredir artifacts\allure-results
 ```
+
+Current live verified scope:
+
+- 24 UI tests
+- login, navigation, happy-path creation, popup behavior, cleanup, and validation coverage
+- teardown cleanup for every generated `AUTO...` patient ID, even if a test fails after creation
 
 Run smoke coverage:
 
@@ -216,4 +222,9 @@ See [docs/manual_test_cases.md](docs/manual_test_cases.md).
 ## Submission Notes
 
 - The suite was verified live against the BioBeat application.
-- Cleanup is built into the creation flow and verified through a dedicated cleanup test.
+- Cleanup is centralized in fixture teardown and verified through a dedicated cleanup test.
+- Any generated `AUTO...` patient IDs are cleaned after each test, even if the test fails mid-flow.
+- The device reuse business rule is covered as an explicit negative test:
+  - create a live session with an available device
+  - attempt to reuse that same device for a second patient
+  - assert `Device is in use.`

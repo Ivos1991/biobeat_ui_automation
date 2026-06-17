@@ -40,4 +40,4 @@ class PatientAdmissionConfirmationPopup(BasePage):
     def click_confirm(self) -> None:
         """Finalize the admission from the popup after the patient ID is confirmed."""
         self.confirm_button.click()
-        self.wait_for_loading_to_finish(settle_ms=1000)
+        self.wait_for_loading_to_finish()

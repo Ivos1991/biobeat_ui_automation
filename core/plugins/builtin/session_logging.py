@@ -2,6 +2,7 @@
 
 from core.framework.hooks import SessionContext, TestContext
 from core.framework.plugins import plugin
+from core.framework.runtime import FrameworkRuntime
 
 
 @plugin("session_logger")
@@ -11,7 +12,7 @@ class SessionLoggerPlugin:
     name = "session_logger"
     description = "Logs session and test lifecycle transitions."
 
-    def register(self, runtime) -> None:
+    def register(self, runtime: FrameworkRuntime) -> None:
         """Register the logging callbacks that track session and test lifecycle transitions."""
         def before_session(context: SessionContext) -> None:
             """Log the start of a framework session together with its execution environment."""

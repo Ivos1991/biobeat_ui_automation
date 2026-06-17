@@ -1,10 +1,23 @@
 """Typed hook manager with ordered execution and failure isolation."""
 
+from collections.abc import Callable
 from dataclasses import dataclass, field
 from time import perf_counter
-from typing import Any, Protocol
+from typing import Any
 
 from core.framework.types import HookName, Metadata, TestId
+
+HOOK_NAMES: tuple[HookName, ...] = (
+    "before_session",
+    "after_session",
+    "before_test",
+    "after_test",
+    "before_step",
+    "after_step",
+    "on_failure",
+    "before_api_call",
+    "after_api_call",
+)
 
 
 @dataclass(slots=True)
@@ -59,11 +72,7 @@ class FailureContext:
 
 
 HookContext = SessionContext | TestContext | StepContext | ApiCallContext | FailureContext
-
-
-class HookHandler(Protocol):
-    """Callable contract implemented by hook callbacks registered with the HookManager."""
-    def __call__(self, context: HookContext) -> None: ...
+HookHandler = Callable[[Any], None]
 
 
 @dataclass(order=True, slots=True)
@@ -82,20 +91,7 @@ class HookManager:
     def __init__(self, logger: Any) -> None:
         """Initialize the ordered hook registry for all supported framework hook names."""
         self._logger = logger
-        self._handlers: dict[HookName, list[RegisteredHook]] = {
-            name: []
-            for name in (
-                "before_session",
-                "after_session",
-                "before_test",
-                "after_test",
-                "before_step",
-                "after_step",
-                "on_failure",
-                "before_api_call",
-                "after_api_call",
-            )
-        }
+        self._handlers: dict[HookName, list[RegisteredHook]] = {name: [] for name in HOOK_NAMES}
 
     def register(
         self,

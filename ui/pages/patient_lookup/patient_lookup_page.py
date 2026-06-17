@@ -1,4 +1,4 @@
-from playwright.sync_api import Locator
+from playwright.sync_api import Locator, expect
 
 from ui.pages.base_page import BasePage
 
@@ -32,5 +32,6 @@ class PatientLookupPage(BasePage):
     def search_patient(self, patient_id: str) -> None:
         """Search the patient grid by patient ID and wait for the async filter to finish."""
         self.search_patient_input.fill(patient_id)
-        self.wait_for_loading_to_finish(settle_ms=1000)
-        self.page.wait_for_timeout(1000)
+        expect(self.search_patient_input).to_have_value(patient_id, timeout=self.settings.timeouts.expect_timeout_ms)
+        self.wait_for_loading_to_finish()
+        self.patient_table.wait_for(state="visible", timeout=self.settings.timeouts.expect_timeout_ms)
